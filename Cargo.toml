@@ -1,0 +1,17 @@
+[package]
+name = "boards"
+version = "0.1.0"
+authors = ["EAimTY <ea.imty@gmail.com>"]
+description = "A Rust library provides several board game abstractions"
+keywords = ["game", "board"]
+edition = "2021"
+readme = "README.md"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/EAimTY/boards"
+
+[features]
+default = []
+tictactoe = []
+
+[dependencies]
+thiserror = "1.0"
