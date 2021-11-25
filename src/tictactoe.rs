@@ -60,6 +60,15 @@ impl TicTacToe {
         }
     }
 
+    /// Get a cell in the board.
+    pub fn get(&self, row: usize, col: usize) -> Result<Option<TicTacToePlayer>, TicTacToeError> {
+        if row > 2 || col > 2 {
+            return Err(TicTacToeError::OutOfBounds);
+        }
+
+        Ok(self.board[row][col])
+    }
+
     /// Check if the game is ended.
     pub fn is_ended(&self) -> bool {
         self.status != TicTacToeStatus::InProgress

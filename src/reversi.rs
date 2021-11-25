@@ -58,6 +58,15 @@ impl Reversi {
         }
     }
 
+    /// Get a cell in the board.
+    pub fn get(&self, row: usize, col: usize) -> Result<Option<ReversiPlayer>, ReversiError> {
+        if row > 7 || col > 7 {
+            return Err(ReversiError::OutOfBounds);
+        }
+
+        Ok(self.board[row][col])
+    }
+
     /// Check if the game is ended.
     pub fn is_ended(&self) -> bool {
         self.status != ReversiStatus::InProgress
