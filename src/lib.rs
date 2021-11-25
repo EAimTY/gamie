@@ -17,6 +17,7 @@
 //! ```rust
 //! use gamie::tictactoe::*;
 //!
+//! # fn tictactoe() {
 //! let mut game = TicTacToe::new();
 //! game.place(TicTacToePlayer::X, 1, 1).unwrap();
 //! game.place(TicTacToePlayer::O, 0, 0).unwrap();
@@ -29,6 +30,7 @@
 //! game.place(TicTacToePlayer::X, 2, 2).unwrap();
 //! assert!(game.is_ended());
 //! assert_eq!(game.status(), TicTacToeStatus::Tie);
+//! # }
 //! ```
 //!
 //! Check the [docs](https://docs.rs/gamie) for further usage information.

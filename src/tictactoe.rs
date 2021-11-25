@@ -1,21 +1,23 @@
-/// The Tic-Tac-Toe game.
-///
-/// # Examples
-///
-/// ```rust
-/// use gamie::tictactoe::*;
-///
-/// fn main() {
-///     let mut game = TicTacToe::new();
-///
-///     game.place(TicTacToePlayer::X, 1, 1).unwrap();
-///     game.place(TicTacToePlayer::O, 0, 0).unwrap();
-///
-///     // ...
-///
-///     dbg!(game.status());
-/// }
-/// ```
+//! The Tic-Tac-Toe game.
+//!
+//! # Examples
+//!
+//! ```rust
+//! use gamie::tictactoe::*;
+//!
+//! # fn tictactoe() {
+//! let mut game = TicTacToe::new();
+//!
+//! game.place(TicTacToePlayer::X, 1, 1).unwrap();
+//! game.place(TicTacToePlayer::O, 0, 0).unwrap();
+//!
+//! // ...
+//!
+//! dbg!(game.status());
+//! # }
+//! ```
+
+/// The Tic-Tac-Toe game itself.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct TicTacToe {
     pub board: [[Option<TicTacToePlayer>; 3]; 3],
