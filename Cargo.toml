@@ -1,6 +1,6 @@
 [package]
 name = "gamie"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["EAimTY <ea.imty@gmail.com>"]
 description = "A Rust library provides abstractions for several classic tiny games"
 keywords = ["game", "gamie"]
