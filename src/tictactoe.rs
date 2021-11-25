@@ -3,7 +3,7 @@
 /// # Examples
 ///
 /// ```rust
-/// use boards::tictactoe::{TicTacToe, TicTacToePlayer, TicTacToeStatus, TicTacToeError};
+/// use gamie::tictactoe::*;
 ///
 /// fn main() {
 ///     let mut game = TicTacToe::new();
@@ -31,6 +31,7 @@ pub enum TicTacToePlayer {
 }
 
 impl TicTacToePlayer {
+    /// Get the opposite player.
     pub fn other(self) -> Self {
         match self {
             TicTacToePlayer::X => TicTacToePlayer::O,
@@ -112,12 +113,12 @@ impl TicTacToe {
         self.board[row][col] = Some(player);
         self.next = self.next.other();
 
-        self.status = self.check_win();
+        self.status = self.check_status();
 
         Ok(self.status)
     }
 
-    fn check_win(&self) -> TicTacToeStatus {
+    fn check_status(&self) -> TicTacToeStatus {
         for row in 0..3 {
             if self.board[row][0].is_some()
                 && self.board[row][0] == self.board[row][1]

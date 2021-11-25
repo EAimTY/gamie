@@ -1,13 +1,13 @@
 [package]
-name = "boards"
+name = "gamie"
 version = "0.1.0"
 authors = ["EAimTY <ea.imty@gmail.com>"]
-description = "A Rust library provides several board game abstractions"
-keywords = ["game", "board"]
+description = "A Rust library provides abstractions for several classic tiny games"
+keywords = ["game", "gamie"]
 edition = "2021"
 readme = "README.md"
 license = "GPL-3.0-or-later"
-repository = "https://github.com/EAimTY/boards"
+repository = "https://github.com/EAimTY/gamie"
 
 [features]
 default = []
