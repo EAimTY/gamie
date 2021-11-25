@@ -108,9 +108,11 @@ impl Reversi {
         }
 
         if flipped {
-            if self.can_player_move(player.other()) {
-                self.next = player.other();
-            } else {
+            self.next = player.other();
+
+            if !self.can_player_move(player.other()) {
+                self.next = player;
+
                 if !self.can_player_move(player) {
                     self.status = self.check_status();
                 }
@@ -220,6 +222,8 @@ impl Reversi {
         player: ReversiPlayer,
     ) -> Option<(usize, usize)> {
         let mut pos = self.iter_positions_in_direction_from(row, col, dir);
+
+        pos.next();
 
         let first = if let Some(pos) = pos.next() {
             pos
