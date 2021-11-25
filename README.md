@@ -36,6 +36,7 @@ Check the [docs](https://docs.rs/gamie) for further usage information.
 ## Modules
 Currently, the following modules are available:
 
+- minesweeper: The Minesweeper game
 - reversi: The Reversi game
 - tictactoe: The Tic-Tac-Toe game
 

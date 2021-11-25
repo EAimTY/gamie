@@ -11,7 +11,8 @@ repository = "https://github.com/EAimTY/gamie"
 
 [features]
 default = []
-all = ["reversi", "tictactoe"]
+all = ["minesweeper", "reversi", "tictactoe"]
+minesweeper = []
 reversi = []
 tictactoe = []
 

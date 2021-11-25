@@ -9,7 +9,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! gamie = { version = "0.1.0", features = ["tictactoe"] }
+//! gamie = { version = "0.2.0", features = ["tictactoe"] }
 //! ```
 //!
 //! Now you can use the `tictactoe`:
@@ -38,8 +38,12 @@
 //! ## Modules
 //! Currently, the following modules are available:
 //!
-//! - (WIP) reversi: Reversi (Othello) game
+//! - minesweeper: The Minesweeper game
+//! - reversi: The Reversi game
 //! - tictactoe: The classic Tic-Tac-Toe game
+
+#[cfg(feature = "minesweeper")]
+pub mod minesweeper;
 
 #[cfg(feature = "reversi")]
 pub mod reversi;
