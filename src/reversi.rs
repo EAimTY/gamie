@@ -6,6 +6,16 @@
 //! use gamie::reversi::*;
 //!
 //! # fn reversi() {
+//! let mut game = Reversi::new();
+//!
+//! game.place(2, 4, ReversiPlayer::Black).unwrap();
+//!
+//! // The next player may not be able to place the piece in any position, so remember to check `get_next_player()`.
+//! assert_eq!(game.get_next_player(), ReversiPlayer::White);
+//!
+//! game.place(2, 3, ReversiPlayer::White).unwrap();
+//!
+//! // ...
 //! # }
 //! ```
 
@@ -324,5 +334,27 @@ mod tests {
     use crate::reversi::*;
 
     #[test]
-    fn test() {}
+    fn test() {
+        let mut game = Reversi::new();
+
+        assert_eq!(
+            game.place(2, 4, ReversiPlayer::Black),
+            Ok(ReversiStatus::InProgress)
+        );
+
+        assert_eq!(
+            game.place(2, 3, ReversiPlayer::White),
+            Ok(ReversiStatus::InProgress)
+        );
+
+        assert_eq!(
+            game.place(2, 6, ReversiPlayer::White),
+            Err(ReversiError::WrongPlayer)
+        );
+
+        assert_eq!(
+            game.place(2, 6, ReversiPlayer::Black),
+            Err(ReversiError::InvalidPosition)
+        );
+    }
 }
