@@ -53,7 +53,7 @@ pub enum TicTacToeStatus {
 impl TicTacToe {
     /// Create a new Tic-Tac-Toe game.
     pub fn new() -> Self {
-        TicTacToe {
+        Self {
             board: [[None; 3]; 3],
             next: TicTacToePlayer::X,
             status: TicTacToeStatus::InProgress,
@@ -114,7 +114,6 @@ impl TicTacToe {
 
         self.board[row][col] = Some(player);
         self.next = self.next.other();
-
         self.status = self.check_status();
 
         Ok(self.status)
