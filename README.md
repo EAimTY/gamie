@@ -37,7 +37,7 @@ Check the [docs](https://docs.rs/gamie) for further usage information.
 Currently, the following modules are available:
 
 - (WIP) reversi: Reversi (Othello) game
-- tictactoe: The Tic-Tac-Toe game.
+- tictactoe: The Tic-Tac-Toe game
 
 ## License
 GNU General Public License v3.0
