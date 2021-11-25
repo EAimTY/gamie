@@ -35,7 +35,12 @@
 //!
 //! ## Modules
 //! Currently, the following modules are available:
-//! - tictactoe: The Tic-Tac-Toe game.
+//!
+//! - (WIP) reversi: Reversi (Othello) game
+//! - tictactoe: The classic Tic-Tac-Toe game
+
+#[cfg(feature = "reversi")]
+pub mod reversi;
 
 #[cfg(feature = "tictactoe")]
 pub mod tictactoe;

@@ -11,7 +11,12 @@ repository = "https://github.com/EAimTY/gamie"
 
 [features]
 default = []
+all = ["reversi", "tictactoe"]
+reversi = []
 tictactoe = []
 
 [dependencies]
 thiserror = "1.0"
+
+[dev-dependencies]
+gamie = { path = "./", features = ["all"] }

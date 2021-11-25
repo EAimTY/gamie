@@ -176,7 +176,7 @@ pub enum TicTacToeError {
 
 #[cfg(test)]
 mod tests {
-    use crate::{TicTacToe, TicTacToeError, TicTacToePlayer, TicTacToeStatus};
+    use crate::tictactoe::*;
 
     #[test]
     fn win() {
