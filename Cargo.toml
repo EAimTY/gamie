@@ -16,6 +16,9 @@ reversi = []
 tictactoe = []
 
 [dependencies]
+itertools = "0.10"
+strum = { version = "0.23", features = ["derive"] }
+strum_macros = "0.23"
 thiserror = "1.0"
 
 [dev-dependencies]
