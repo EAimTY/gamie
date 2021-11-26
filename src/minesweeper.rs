@@ -37,6 +37,14 @@ impl MinesweeperCell {
     }
 }
 
+/// The Minesweeper game status.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum MinesweeperStatus {
+    Win,
+    Exploded(usize, usize),
+    InProgress,
+}
+
 impl Minesweeper {
     pub fn new(height: usize, width: usize, mines: usize) -> Self {
         let board = itertools::repeat_n(MinesweeperCell::new(true), mines)
@@ -67,33 +75,88 @@ impl Minesweeper {
             self.board.swap(idx, range.sample(&mut rng));
         }
 
-        self.count_for_all_cells();
+        self.update_around_mine_count();
     }
 
-    pub fn get(&self, row: usize, col: usize) -> Result<MinesweeperCell, MinesweeperError> {
-        if row >= self.height || col >= self.width {
-            return Err(MinesweeperError::OutOfBounds);
+    pub fn click_unrevealed(
+        &mut self,
+        row: usize,
+        col: usize,
+    ) -> Result<MinesweeperStatus, MinesweeperError> {
+        self.check_position_validity(row, col)?;
+
+        if self.board[row * self.width + col].is_flagged {
+            return Err(MinesweeperError::AlreadyFlagged);
         }
 
-        Ok(self.board[row * self.width + col])
+        if self.board[row * self.width + col].is_mine {
+            self.status = MinesweeperStatus::Exploded(row, col);
+            return Ok(self.status);
+        }
+
+        self.reveal_from(row, col);
+        self.status = self.check_game_status();
+
+        Ok(self.status)
     }
 
-    pub fn click_unrevealed(&mut self, row: usize, col: usize) -> Result<MinesweeperStatus, MinesweeperError> {
+    pub fn click_revealed(
+        &mut self,
+        row: usize,
+        col: usize,
+    ) -> Result<MinesweeperStatus, MinesweeperError> {
         self.check_position_validity(row, col)?;
 
         todo!();
     }
 
-    pub fn click_revealed(&mut self, row: usize, col: usize, auto_flag: bool) -> Result<MinesweeperStatus, MinesweeperError> {
+    pub fn toggle_flag(
+        &mut self,
+        row: usize,
+        col: usize,
+    ) -> Result<MinesweeperStatus, MinesweeperError> {
         self.check_position_validity(row, col)?;
 
-        todo!();
+        if self.board[row * self.width + col].is_revealed {
+            return Err(MinesweeperError::AlreadyRevealed);
+        }
+
+        self.board[row * self.width + col].is_flagged =
+            !self.board[row * self.width + col].is_flagged;
+
+        self.status = self.check_game_status();
+
+        Ok(self.status)
     }
 
-    pub fn flag(&mut self, row: usize, col: usize) -> Result<MinesweeperStatus, MinesweeperError> {
+    pub fn get_cell_neighbors(
+        &self,
+        row: usize,
+        col: usize,
+    ) -> Result<MinesweeperCellsAround, MinesweeperError> {
         self.check_position_validity(row, col)?;
+        Ok(self.get_cell_neighbors_by_coords(row, col))
+    }
 
-        todo!();
+    fn reveal_from(&mut self, row: usize, col: usize) {
+        if self.board[row * self.width + col].mines_around != 0 {
+            self.board[row * self.width + col].is_revealed = true;
+        } else {
+            use std::collections::VecDeque;
+
+            let mut cells_to_reveal = VecDeque::new();
+            cells_to_reveal.push_back(row * self.width + col);
+
+            while let Some(cell_idx) = cells_to_reveal.pop_front() {
+                for neighbor_idx in self.get_cell_neighbors_by_idx(cell_idx).iter_by_idx() {
+                    self.board[neighbor_idx].is_revealed = true;
+
+                    if self.board[neighbor_idx].mines_around == 0 {
+                        cells_to_reveal.push_back(neighbor_idx);
+                    }
+                }
+            }
+        }
     }
 
     fn check_game_status(&self) -> MinesweeperStatus {
@@ -112,10 +175,11 @@ impl Minesweeper {
         Ok(())
     }
 
-    fn count_for_all_cells(&mut self) {
+    fn update_around_mine_count(&mut self) {
         for idx in 0..self.height * self.width {
             let count = self
-                .positions_around_from(idx)
+                .get_cell_neighbors_by_idx(idx)
+                .iter_by_idx()
                 .filter(|arnd_idx| self.board[*arnd_idx].is_mine)
                 .count();
 
@@ -123,51 +187,91 @@ impl Minesweeper {
         }
     }
 
-    fn positions_around_from(&self, idx: usize) -> impl Iterator<Item = usize> + '_ {
-        let (row, col) = ((idx / self.width) as i128, (idx % self.width) as i128);
+    fn get_cell_neighbors_by_coords(&self, row: usize, col: usize) -> MinesweeperCellsAround {
+        MinesweeperCellsAround::new(row, col, self.height, self.width)
+    }
 
-        let around = [
-            (row - 1, col - 1),
-            (row - 1, col),
-            (row - 1, col + 1),
-            (row, col - 1),
-            (row, col + 1),
-            (row + 1, col - 1),
-            (row + 1, col),
-            (row + 1, col + 1),
-        ];
-
-        around
-            .into_iter()
-            .filter(|(row, col)| {
-                *row >= 0 && *col >= 0 && *row < self.height as i128 && *col < self.width as i128
-            })
-            .map(|(row, col)| row as usize * self.width + col as usize)
+    fn get_cell_neighbors_by_idx(&self, idx: usize) -> MinesweeperCellsAround {
+        self.get_cell_neighbors_by_coords(idx / self.width, idx % self.width)
     }
 }
 
-/// The Minesweeper game status.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum MinesweeperStatus {
-    Win,
-    Exploded(usize, usize),
-    InProgress,
+#[derive(Clone, Debug)]
+pub struct MinesweeperCellsAround {
+    around: [(i128, i128); 8],
+    board_height: i128,
+    board_width: i128,
+    offset: usize,
+}
+
+impl Iterator for MinesweeperCellsAround {
+    type Item = (usize, usize);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.around[self.offset..]
+            .iter()
+            .enumerate()
+            .filter(|(_, (row, col))| {
+                *row >= 0 && *col >= 0 && *row < self.board_height && *col < self.board_width
+            })
+            .next()
+            .map(|(idx, (row, col))| {
+                self.offset += idx + 1;
+                (*row as usize, *col as usize)
+            })
+    }
+}
+
+impl MinesweeperCellsAround {
+    fn new(row: usize, col: usize, board_height: usize, board_width: usize) -> Self {
+        let (row, col, board_height, board_width) = (
+            row as i128,
+            col as i128,
+            board_height as i128,
+            board_width as i128,
+        );
+
+        MinesweeperCellsAround {
+            around: [
+                (row - 1, col - 1),
+                (row - 1, col),
+                (row - 1, col + 1),
+                (row, col - 1),
+                (row, col + 1),
+                (row + 1, col - 1),
+                (row + 1, col),
+                (row + 1, col + 1),
+            ],
+            board_height,
+            board_width,
+            offset: 0,
+        }
+    }
+
+    fn iter_by_idx(self) -> impl Iterator<Item = usize> {
+        let board_width = self.board_width;
+        self.map(move |(row, col)| row * board_width as usize + col)
+    }
 }
 
 use thiserror::Error;
 
-/// Errors that can occur when clicking a cell on the board.
-#[derive(Debug, Eq, Error, PartialEq)]
+/// Errors that can occur when clicking an unrevealed cell on the board.
+#[derive(Clone, Debug, Eq, Error, PartialEq)]
 pub enum MinesweeperError {
     #[error("Position out of bounds")]
     OutOfBounds,
+    #[error("Clicked an already flagged cell")]
+    AlreadyFlagged,
+    #[error("Clicked an already revealed cell")]
+    AlreadyRevealed,
     #[error("The game was already ended")]
     GameEnded,
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::minesweeper::*;
+    // use crate::minesweeper::*;
 
     #[test]
     fn test() {}
