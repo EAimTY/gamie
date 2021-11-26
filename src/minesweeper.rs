@@ -38,10 +38,10 @@ impl MinesweeperCell {
 }
 
 /// The Minesweeper game status.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum MinesweeperStatus {
     Win,
-    Exploded(usize, usize),
+    Exploded(Vec<(usize, usize)>),
     InProgress,
 }
 
@@ -78,43 +78,33 @@ impl Minesweeper {
         self.update_around_mine_count();
     }
 
-    pub fn click_unrevealed(
-        &mut self,
-        row: usize,
-        col: usize,
-    ) -> Result<MinesweeperStatus, MinesweeperError> {
+    pub fn get(&self, row: usize, col: usize) -> Result<MinesweeperCell, MinesweeperError> {
         self.check_position_validity(row, col)?;
-
-        if self.board[row * self.width + col].is_flagged {
-            return Err(MinesweeperError::AlreadyFlagged);
-        }
-
-        if self.board[row * self.width + col].is_mine {
-            self.status = MinesweeperStatus::Exploded(row, col);
-            return Ok(self.status);
-        }
-
-        self.reveal_from(row, col);
-        self.status = self.check_game_status();
-
-        Ok(self.status)
+        Ok(self.board[row * self.width + col])
     }
 
-    pub fn click_revealed(
+    pub fn click(
         &mut self,
         row: usize,
         col: usize,
-    ) -> Result<MinesweeperStatus, MinesweeperError> {
+        allow_click_revealed: bool,
+    ) -> Result<&MinesweeperStatus, MinesweeperError> {
         self.check_position_validity(row, col)?;
 
-        todo!();
+        if !self.board[row * self.width + col].is_revealed {
+            Ok(self.click_unrevealed(row, col)?)
+        } else if allow_click_revealed {
+            Ok(self.click_revealed(row, col)?)
+        } else {
+            return Err(MinesweeperError::AlreadyRevealed);
+        }
     }
 
     pub fn toggle_flag(
         &mut self,
         row: usize,
         col: usize,
-    ) -> Result<MinesweeperStatus, MinesweeperError> {
+    ) -> Result<&MinesweeperStatus, MinesweeperError> {
         self.check_position_validity(row, col)?;
 
         if self.board[row * self.width + col].is_revealed {
@@ -126,7 +116,7 @@ impl Minesweeper {
 
         self.status = self.check_game_status();
 
-        Ok(self.status)
+        Ok(&self.status)
     }
 
     pub fn get_cell_neighbors(
@@ -138,25 +128,118 @@ impl Minesweeper {
         Ok(self.get_cell_neighbors_by_coords(row, col))
     }
 
-    fn reveal_from(&mut self, row: usize, col: usize) {
-        if self.board[row * self.width + col].mines_around != 0 {
-            self.board[row * self.width + col].is_revealed = true;
+    fn click_unrevealed(
+        &mut self,
+        row: usize,
+        col: usize,
+    ) -> Result<&MinesweeperStatus, MinesweeperError> {
+        if self.board[row * self.width + col].is_flagged {
+            return Err(MinesweeperError::AlreadyFlagged);
+        }
+
+        if self.board[row * self.width + col].is_mine {
+            self.status = MinesweeperStatus::Exploded(vec![(row, col)]);
+            return Ok(&self.status);
+        }
+
+        self.reveal_from(row * self.width + col);
+        self.status = self.check_game_status();
+
+        Ok(&self.status)
+    }
+
+    fn click_revealed(
+        &mut self,
+        row: usize,
+        col: usize,
+    ) -> Result<&MinesweeperStatus, MinesweeperError> {
+        if self.board[row * self.width + col].mines_around > 0 {
+            let mut arnd_revealed_count = 0;
+            let mut arnd_flagged_count = 0;
+
+            self.get_cell_neighbors_by_coords(row, col)
+                .iter_by_idx()
+                .map(|idx| self.board[idx])
+                .for_each(|arnd_cell| {
+                    if arnd_cell.is_revealed {
+                        arnd_revealed_count += 1;
+                    } else if arnd_cell.is_flagged {
+                        arnd_flagged_count += 1;
+                    }
+                });
+
+            let arnd_unrevealed_count = 8 - arnd_revealed_count - arnd_flagged_count;
+
+            if arnd_unrevealed_count > 0
+                && arnd_flagged_count == self.board[row * self.width + col].mines_around
+            {
+                let mut exploded = None;
+
+                self.get_cell_neighbors_by_coords(row, col)
+                    .iter_by_idx()
+                    .for_each(|idx| {
+                        if !self.board[idx].is_flagged && !self.board[idx].is_revealed {
+                            if self.board[idx].is_mine {
+                                self.board[idx].is_revealed = true;
+
+                                match exploded {
+                                    None => exploded = Some(vec![(row, col)]),
+                                    Some(ref mut exploded) => {
+                                        exploded.push((row, col));
+                                    }
+                                }
+                            } else {
+                                self.reveal_from(idx);
+                            }
+                        }
+                    });
+
+                if let Some(exploded) = exploded {
+                    self.status = MinesweeperStatus::Exploded(exploded);
+                    return Ok(&self.status);
+                }
+            } else if arnd_unrevealed_count > 0
+                && arnd_unrevealed_count + arnd_flagged_count
+                    == self.board[row * self.width + col].mines_around
+            {
+                self.get_cell_neighbors_by_coords(row, col)
+                    .iter_by_idx()
+                    .for_each(|idx| {
+                        if !self.board[idx].is_flagged && !self.board[idx].is_revealed {
+                            self.board[idx].is_flagged = true;
+                        }
+                    });
+            }
+
+            self.status = self.check_game_status();
+        }
+
+        Ok(&self.status)
+    }
+
+    fn reveal_from(&mut self, idx: usize) -> Option<Vec<(usize, usize)>> {
+        if self.board[idx].mines_around != 0 {
+            self.board[idx].is_revealed = true;
         } else {
             use std::collections::VecDeque;
 
-            let mut cells_to_reveal = VecDeque::new();
-            cells_to_reveal.push_back(row * self.width + col);
+            let mut cell_idxs_to_reveal = VecDeque::new();
+            cell_idxs_to_reveal.push_back(idx);
 
-            while let Some(cell_idx) = cells_to_reveal.pop_front() {
+            while let Some(cell_idx) = cell_idxs_to_reveal.pop_front() {
+                self.board[cell_idx].is_revealed = true;
+
                 for neighbor_idx in self.get_cell_neighbors_by_idx(cell_idx).iter_by_idx() {
-                    self.board[neighbor_idx].is_revealed = true;
-
-                    if self.board[neighbor_idx].mines_around == 0 {
-                        cells_to_reveal.push_back(neighbor_idx);
+                    if !self.board[neighbor_idx].is_flagged
+                        && self.board[neighbor_idx].mines_around == 0
+                    {
+                        cell_idxs_to_reveal.push_back(neighbor_idx);
                     }
                 }
             }
         }
+
+        None
     }
 
     fn check_game_status(&self) -> MinesweeperStatus {
