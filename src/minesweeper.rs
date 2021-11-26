@@ -78,9 +78,19 @@ impl Minesweeper {
         self.update_around_mine_count();
     }
 
-    pub fn get(&self, row: usize, col: usize) -> Result<MinesweeperCell, MinesweeperError> {
+    /// Check if the game is ended.
+    pub fn is_ended(&self) -> bool {
+        self.status != MinesweeperStatus::InProgress
+    }
+
+    /// Get the status of the game.
+    pub fn status(&self) -> &MinesweeperStatus {
+        &self.status
+    }
+
+    pub fn get(&self, row: usize, col: usize) -> Result<&MinesweeperCell, MinesweeperError> {
         self.check_position_validity(row, col)?;
-        Ok(self.board[row * self.width + col])
+        Ok(&self.board[row * self.width + col])
     }
 
     pub fn click(
@@ -117,15 +127,6 @@ impl Minesweeper {
         self.status = self.check_game_status();
 
         Ok(&self.status)
-    }
-
-    pub fn get_cell_neighbors(
-        &self,
-        row: usize,
-        col: usize,
-    ) -> Result<MinesweeperCellsAround, MinesweeperError> {
-        self.check_position_validity(row, col)?;
-        Ok(self.get_cell_neighbors_by_coords(row, col))
     }
 
     fn click_unrevealed(
@@ -217,7 +218,7 @@ impl Minesweeper {
         Ok(&self.status)
     }
 
-    fn reveal_from(&mut self, idx: usize) -> Option<Vec<(usize, usize)>> {
+    fn reveal_from(&mut self, idx: usize) {
         if self.board[idx].mines_around != 0 {
             self.board[idx].is_revealed = true;
         } else {
@@ -238,12 +239,19 @@ impl Minesweeper {
                 }
             }
         }
-
-        None
     }
 
     fn check_game_status(&self) -> MinesweeperStatus {
-        todo!();
+        if self
+            .board
+            .iter()
+            .filter(|cell| !cell.is_mine)
+            .all(|cell| cell.is_revealed)
+        {
+            MinesweeperStatus::Win
+        } else {
+            MinesweeperStatus::InProgress
+        }
     }
 
     fn check_position_validity(&self, row: usize, col: usize) -> Result<(), MinesweeperError> {
@@ -280,7 +288,7 @@ impl Minesweeper {
 }
 
 #[derive(Clone, Debug)]
-pub struct MinesweeperCellsAround {
+struct MinesweeperCellsAround {
     around: [(i128, i128); 8],
     board_height: i128,
     board_width: i128,
