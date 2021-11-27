@@ -23,7 +23,7 @@
 
 /// The Reversi game.
 /// If you pass an invalid position to a method, the game will panic. Remember to check the target position validity when dealing with user input.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct Reversi {
     pub board: [[Option<ReversiPlayer>; 8]; 8],
     pub next: ReversiPlayer,
@@ -75,18 +75,14 @@ impl Reversi {
 
     /// Get a cell reference from the game board.
     /// Panic if the target position is out of bounds.
-    pub fn get(&self, row: usize, col: usize) -> Result<&Option<ReversiPlayer>, ReversiError> {
-        Ok(&self.board[row][col])
+    pub fn get(&self, row: usize, col: usize) -> &Option<ReversiPlayer> {
+        &self.board[row][col]
     }
 
     /// Get a mutable cell reference from the game board.
     /// Panic if the target position is out of bounds.
-    pub fn get_mut(
-        &mut self,
-        row: usize,
-        col: usize,
-    ) -> Result<&mut Option<ReversiPlayer>, ReversiError> {
-        Ok(&mut self.board[row][col])
+    pub fn get_mut(&mut self, row: usize, col: usize) -> &mut Option<ReversiPlayer> {
+        &mut self.board[row][col]
     }
 
     /// Check if the game is ended.

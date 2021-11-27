@@ -18,7 +18,7 @@
 //! use gamie::tictactoe::*;
 //!
 //! # fn tictactoe() {
-//! let mut game = TicTacToe::new();
+//! let mut game = TicTacToe::new().unwrap();
 //! game.place(TicTacToePlayer::X, 1, 1).unwrap();
 //! game.place(TicTacToePlayer::O, 0, 0).unwrap();
 //! game.place(TicTacToePlayer::X, 0, 2).unwrap();
@@ -29,7 +29,7 @@
 //! game.place(TicTacToePlayer::O, 0, 1).unwrap();
 //! game.place(TicTacToePlayer::X, 2, 2).unwrap();
 //! assert!(game.is_ended());
-//! assert_eq!(game.status(), TicTacToeStatus::Tie);
+//! assert_eq!(game.state(), &TicTacToeState::Tie);
 //! # }
 //! ```
 //!
