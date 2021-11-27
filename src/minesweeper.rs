@@ -16,6 +16,12 @@
 //! # }
 //! ```
 
+#[cfg(not(feature = "std"))]
+use alloc::{collections::VecDeque, vec::Vec};
+
+#[cfg(feature = "std")]
+use std::collections::VecDeque;
+
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
@@ -291,8 +297,6 @@ impl Minesweeper {
         if self.board[idx].mine_adjacent != 0 {
             self.board[idx].is_revealed = true;
         } else {
-            use std::collections::VecDeque;
-
             let mut cell_idxs_to_reveal = VecDeque::new();
             cell_idxs_to_reveal.push_back(idx);
 

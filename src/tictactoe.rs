@@ -19,6 +19,12 @@
 //! # }
 //! ```
 
+#[cfg(not(feature = "std"))]
+use core::convert::Infallible;
+
+#[cfg(feature = "std")]
+use std::convert::Infallible;
+
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
@@ -61,8 +67,6 @@ pub enum TicTacToeState {
     Tie,
     InProgress,
 }
-
-use std::convert::Infallible;
 
 impl TicTacToe {
     /// Create a new Tic-Tac-Toe game.

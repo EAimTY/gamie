@@ -10,16 +10,17 @@ license = "GPL-3.0-or-later"
 repository = "https://github.com/EAimTY/gamie"
 
 [features]
-default = []
-all = ["minesweeper", "reversi", "serde", "tictactoe"]
+default = ["std"]
+all = ["std", "serde", "minesweeper", "reversi", "tictactoe"]
+std = ["itertools/use_std", "rand/std", "rand/std_rng", "serde/std"]
 minesweeper = ["itertools", "rand"]
 reversi = ["itertools"]
 tictactoe = []
 
 [dependencies]
-itertools = { version = "0.10", optional = true }
-rand = { version = "0.8", optional = true }
-serde = { version = "1.0", features = ["derive"], optional = true }
+itertools = { version = "0.10", default-features = false, optional = true }
+rand = { version = "0.8", default-features = false, optional = true }
+serde = { version = "1.0", features = ["derive"], default-features = false, optional = true }
 thiserror = "1.0"
 
 [dev-dependencies]

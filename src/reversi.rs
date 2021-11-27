@@ -21,6 +21,12 @@
 //! # }
 //! ```
 
+#[cfg(not(feature = "std"))]
+use core::{cmp::Ordering, convert::Infallible};
+
+#[cfg(feature = "std")]
+use std::{cmp::Ordering, convert::Infallible};
+
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
@@ -63,8 +69,6 @@ pub enum ReversiState {
     Tie,
     InProgress,
 }
-
-use std::convert::Infallible;
 
 impl Reversi {
     /// Create a new Reversi game.
@@ -221,8 +225,6 @@ impl Reversi {
                 ReversiPlayer::White => white_count += 1,
             }
         }
-
-        use std::cmp::Ordering;
 
         self.state = match black_count.cmp(&white_count) {
             Ordering::Less => ReversiState::Win(ReversiPlayer::White),
