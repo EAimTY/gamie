@@ -9,7 +9,7 @@ To use gamie, you should enable modules you need in `Cargo.toml`. For example `t
 
 ```toml
 [dependencies]
-gamie = { version = "0.2", features = ["tictactoe"] }
+gamie = { version = "0.3", features = ["tictactoe"] }
 ```
 
 Now you can use the `tictactoe`:
@@ -36,9 +36,9 @@ Check the [docs](https://docs.rs/gamie) for further usage information.
 ## Modules
 Currently, the following modules are available:
 
-- minesweeper: The Minesweeper game
-- reversi: The Reversi game
-- tictactoe: The Tic-Tac-Toe game
+- [minesweeper](https://docs.rs/gamie/*/gamie/minesweeper)
+- [reversi](https://docs.rs/gamie/*/gamie/reversi)
+- [tictactoe](https://docs.rs/gamie/*/gamie/tictactoe)
 
 ## License
 GNU General Public License v3.0

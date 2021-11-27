@@ -18,7 +18,7 @@
 ///
 /// To avoid unessecary memory allocation, the game board is stored in a single `Vec` rather than a nested one. Use the `get` method to access the board instead of using the `board` field directly.
 ///
-/// If you pass an invalid position to a method, the game will panic. Make sure to use `check_position_validity` to check the target position when dealing with user input.
+/// If you pass an invalid position to a method, the game will panic. Make sure to check the target position when dealing with user input using `check_position_validity` method.
 #[derive(Clone, Debug)]
 pub struct Minesweeper {
     pub board: Vec<MinesweeperCell>,
