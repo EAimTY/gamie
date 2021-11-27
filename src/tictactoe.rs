@@ -19,9 +19,14 @@
 //! # }
 //! ```
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 /// The Tic-Tac-Toe game.
 /// If you pass an invalid position to a method, the game will panic. Remember to check the target position validity when dealing with user input.
 #[derive(Clone, Debug)]
+#[cfg(feature = "serde")]
+#[derive(Deserialize, Serialize)]
 pub struct TicTacToe {
     pub board: [[Option<TicTacToePlayer>; 3]; 3],
     pub next: TicTacToePlayer,
@@ -30,6 +35,8 @@ pub struct TicTacToe {
 
 /// The Tic-Tac-Toe game players.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[cfg(feature = "serde")]
+#[derive(Deserialize, Serialize)]
 pub enum TicTacToePlayer {
     X,
     O,
@@ -47,6 +54,8 @@ impl TicTacToePlayer {
 
 /// The Tic-Tac-Toe game state.
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg(feature = "serde")]
+#[derive(Deserialize, Serialize)]
 pub enum TicTacToeState {
     Win(TicTacToePlayer),
     Tie,

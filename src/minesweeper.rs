@@ -16,12 +16,17 @@
 //! # }
 //! ```
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 /// The Minesweeper game.
 ///
 /// To avoid unessecary memory allocation, the game board is stored in a single `Vec` rather than a nested one. Use the `get` method to access the board instead of using the `board` field directly.
 ///
 /// If you pass an invalid position to a method, the game will panic. Remember to check the target position validity when dealing with user input.
 #[derive(Clone, Debug)]
+#[cfg(feature = "serde")]
+#[derive(Deserialize, Serialize)]
 pub struct Minesweeper {
     pub board: Vec<MinesweeperCell>,
     pub height: usize,
@@ -31,6 +36,8 @@ pub struct Minesweeper {
 
 /// The cell of the Minesweeper board.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[cfg(feature = "serde")]
+#[derive(Deserialize, Serialize)]
 pub struct MinesweeperCell {
     pub is_mine: bool,
     pub mine_adjacent: usize,
@@ -51,6 +58,8 @@ impl MinesweeperCell {
 
 /// The Minesweeper game state.
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg(feature = "serde")]
+#[derive(Deserialize, Serialize)]
 pub enum MinesweeperState {
     Win,
     Exploded(Vec<(usize, usize)>),

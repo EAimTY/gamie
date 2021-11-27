@@ -11,14 +11,15 @@ repository = "https://github.com/EAimTY/gamie"
 
 [features]
 default = []
-all = ["minesweeper", "reversi", "tictactoe"]
+all = ["minesweeper", "reversi", "serde", "tictactoe"]
 minesweeper = ["itertools", "rand"]
 reversi = ["itertools"]
 tictactoe = []
 
 [dependencies]
-itertools = {version = "0.10", optional = true}
-rand = {version = "0.8", optional = true}
+itertools = { version = "0.10", optional = true }
+rand = { version = "0.8", optional = true }
+serde = { version = "1.0", features = ["derive"], optional = true }
 thiserror = "1.0"
 
 [dev-dependencies]

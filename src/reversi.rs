@@ -21,9 +21,14 @@
 //! # }
 //! ```
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 /// The Reversi game.
 /// If you pass an invalid position to a method, the game will panic. Remember to check the target position validity when dealing with user input.
 #[derive(Clone, Debug)]
+#[cfg(feature = "serde")]
+#[derive(Deserialize, Serialize)]
 pub struct Reversi {
     pub board: [[Option<ReversiPlayer>; 8]; 8],
     pub next: ReversiPlayer,
@@ -32,6 +37,8 @@ pub struct Reversi {
 
 /// The game players.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[cfg(feature = "serde")]
+#[derive(Deserialize, Serialize)]
 pub enum ReversiPlayer {
     Black,
     White,
@@ -49,6 +56,8 @@ impl ReversiPlayer {
 
 /// The game state.
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg(feature = "serde")]
+#[derive(Deserialize, Serialize)]
 pub enum ReversiState {
     Win(ReversiPlayer),
     Tie,
