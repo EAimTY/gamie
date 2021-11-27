@@ -21,7 +21,7 @@ pub struct Minesweeper {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct MinesweeperCell {
     pub is_mine: bool,
-    pub mines_around: usize,
+    pub adjacent_mine: usize,
     pub is_revealed: bool,
     pub is_flagged: bool,
 }
@@ -30,7 +30,7 @@ impl MinesweeperCell {
     pub fn new(is_mine: bool) -> Self {
         Self {
             is_mine,
-            mines_around: 0,
+            adjacent_mine: 0,
             is_revealed: false,
             is_flagged: false,
         }
@@ -154,29 +154,32 @@ impl Minesweeper {
         row: usize,
         col: usize,
     ) -> Result<&MinesweeperStatus, MinesweeperError> {
-        if self.board[row * self.width + col].mines_around > 0 {
-            let mut arnd_revealed_count = 0;
-            let mut arnd_flagged_count = 0;
+        if self.board[row * self.width + col].adjacent_mine > 0 {
+            let mut adjacent_all = 0;
+            let mut adjacent_revealed = 0;
+            let mut adjacent_flagged = 0;
 
-            self.get_cell_neighbors_by_coords(row, col)
+            self.get_adjacent_cells_by_coords(row, col)
                 .iter_by_idx()
                 .map(|idx| self.board[idx])
-                .for_each(|arnd_cell| {
-                    if arnd_cell.is_revealed {
-                        arnd_revealed_count += 1;
-                    } else if arnd_cell.is_flagged {
-                        arnd_flagged_count += 1;
+                .for_each(|cell| {
+                    adjacent_all += 1;
+
+                    if cell.is_revealed {
+                        adjacent_revealed += 1;
+                    } else if cell.is_flagged {
+                        adjacent_flagged += 1;
                     }
                 });
 
-            let arnd_unrevealed_count = 8 - arnd_revealed_count - arnd_flagged_count;
+            let adjacent_unrevealed = adjacent_all - adjacent_revealed - adjacent_flagged;
 
-            if arnd_unrevealed_count > 0
-                && arnd_flagged_count == self.board[row * self.width + col].mines_around
+            if adjacent_unrevealed > 0
+                && adjacent_flagged == self.board[row * self.width + col].adjacent_mine
             {
                 let mut exploded = None;
 
-                self.get_cell_neighbors_by_coords(row, col)
+                self.get_adjacent_cells_by_coords(row, col)
                     .iter_by_idx()
                     .for_each(|idx| {
                         if !self.board[idx].is_flagged && !self.board[idx].is_revealed {
@@ -199,11 +202,11 @@ impl Minesweeper {
                     self.status = MinesweeperStatus::Exploded(exploded);
                     return Ok(&self.status);
                 }
-            } else if arnd_unrevealed_count > 0
-                && arnd_unrevealed_count + arnd_flagged_count
-                    == self.board[row * self.width + col].mines_around
+            } else if adjacent_unrevealed > 0
+                && adjacent_unrevealed + adjacent_flagged
+                    == self.board[row * self.width + col].adjacent_mine
             {
-                self.get_cell_neighbors_by_coords(row, col)
+                self.get_adjacent_cells_by_coords(row, col)
                     .iter_by_idx()
                     .for_each(|idx| {
                         if !self.board[idx].is_flagged && !self.board[idx].is_revealed {
@@ -219,7 +222,7 @@ impl Minesweeper {
     }
 
     fn reveal_from(&mut self, idx: usize) {
-        if self.board[idx].mines_around != 0 {
+        if self.board[idx].adjacent_mine != 0 {
             self.board[idx].is_revealed = true;
         } else {
             use std::collections::VecDeque;
@@ -230,11 +233,15 @@ impl Minesweeper {
             while let Some(cell_idx) = cell_idxs_to_reveal.pop_front() {
                 self.board[cell_idx].is_revealed = true;
 
-                for neighbor_idx in self.get_cell_neighbors_by_idx(cell_idx).iter_by_idx() {
+                for neighbor_idx in self.get_adjacent_cells_by_idx(cell_idx).iter_by_idx() {
                     if !self.board[neighbor_idx].is_flagged
-                        && self.board[neighbor_idx].mines_around == 0
+                        && !self.board[neighbor_idx].is_revealed
                     {
-                        cell_idxs_to_reveal.push_back(neighbor_idx);
+                        if self.board[neighbor_idx].adjacent_mine == 0 {
+                            cell_idxs_to_reveal.push_back(neighbor_idx);
+                        } else {
+                            self.board[neighbor_idx].is_revealed = true;
+                        }
                     }
                 }
             }
@@ -269,33 +276,33 @@ impl Minesweeper {
     fn update_around_mine_count(&mut self) {
         for idx in 0..self.height * self.width {
             let count = self
-                .get_cell_neighbors_by_idx(idx)
+                .get_adjacent_cells_by_idx(idx)
                 .iter_by_idx()
-                .filter(|arnd_idx| self.board[*arnd_idx].is_mine)
+                .filter(|idx| self.board[*idx].is_mine)
                 .count();
 
-            self.board[idx].mines_around = count;
+            self.board[idx].adjacent_mine = count;
         }
     }
 
-    fn get_cell_neighbors_by_coords(&self, row: usize, col: usize) -> MinesweeperCellsAround {
-        MinesweeperCellsAround::new(row, col, self.height, self.width)
+    fn get_adjacent_cells_by_coords(&self, row: usize, col: usize) -> MinesweeperAdjacentCells {
+        MinesweeperAdjacentCells::new(row, col, self.height, self.width)
     }
 
-    fn get_cell_neighbors_by_idx(&self, idx: usize) -> MinesweeperCellsAround {
-        self.get_cell_neighbors_by_coords(idx / self.width, idx % self.width)
+    fn get_adjacent_cells_by_idx(&self, idx: usize) -> MinesweeperAdjacentCells {
+        self.get_adjacent_cells_by_coords(idx / self.width, idx % self.width)
     }
 }
 
 #[derive(Clone, Debug)]
-struct MinesweeperCellsAround {
+struct MinesweeperAdjacentCells {
     around: [(i128, i128); 8],
     board_height: i128,
     board_width: i128,
     offset: usize,
 }
 
-impl Iterator for MinesweeperCellsAround {
+impl Iterator for MinesweeperAdjacentCells {
     type Item = (usize, usize);
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -313,7 +320,7 @@ impl Iterator for MinesweeperCellsAround {
     }
 }
 
-impl MinesweeperCellsAround {
+impl MinesweeperAdjacentCells {
     fn new(row: usize, col: usize, board_height: usize, board_width: usize) -> Self {
         let (row, col, board_height, board_width) = (
             row as i128,
@@ -322,7 +329,7 @@ impl MinesweeperCellsAround {
             board_width as i128,
         );
 
-        MinesweeperCellsAround {
+        MinesweeperAdjacentCells {
             around: [
                 (row - 1, col - 1),
                 (row - 1, col),
