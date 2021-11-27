@@ -1,5 +1,7 @@
 //! The Minesweeper game.
 //!
+//! Check out struct [`Minesweeper`](https://docs.rs/gamie/*/gamie/minesweeper/struct.Minesweeper.html) for more information.
+//!
 //! # Examples
 //!
 //! ```rust
@@ -18,7 +20,7 @@
 ///
 /// To avoid unessecary memory allocation, the game board is stored in a single `Vec` rather than a nested one. Use the `get` method to access the board instead of using the `board` field directly.
 ///
-/// If you pass an invalid position to a method, the game will panic. Make sure to check the target position when dealing with user input using `check_position_validity` method.
+/// If you pass an invalid position to a method, the game will panic. Remember to check the target position validity when dealing with user input.
 #[derive(Clone, Debug)]
 pub struct Minesweeper {
     pub board: Vec<MinesweeperCell>,
@@ -31,7 +33,7 @@ pub struct Minesweeper {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct MinesweeperCell {
     pub is_mine: bool,
-    pub adjacent_mine: usize,
+    pub mine_adjacent: usize,
     pub is_revealed: bool,
     pub is_flagged: bool,
 }
@@ -40,7 +42,7 @@ impl MinesweeperCell {
     fn new(is_mine: bool) -> Self {
         Self {
             is_mine,
-            adjacent_mine: 0,
+            mine_adjacent: 0,
             is_revealed: false,
             is_flagged: false,
         }
@@ -75,14 +77,18 @@ impl Minesweeper {
             width,
             state: MinesweeperState::InProgress,
         };
-        minesweeper.randomize();
+        minesweeper.randomize().unwrap();
 
         Ok(minesweeper)
     }
 
     /// Randomize the Minesweeper board.
     /// Useful if the first click is on a mine.
-    pub fn randomize(&mut self) {
+    pub fn randomize(&mut self) -> Result<(), MinesweeperError> {
+        if self.is_ended() {
+            return Err(MinesweeperError::GameEnded);
+        }
+
         use rand::distributions::{Distribution, Uniform};
 
         let mut rng = rand::thread_rng();
@@ -93,9 +99,11 @@ impl Minesweeper {
         }
 
         self.update_around_mine_count();
+
+        Ok(())
     }
 
-    /// Check if the game was already end.
+    /// Check if the game is already ended.
     pub fn is_ended(&self) -> bool {
         self.state != MinesweeperState::InProgress
     }
@@ -131,6 +139,10 @@ impl Minesweeper {
         col: usize,
         auto_flag: bool,
     ) -> Result<bool, MinesweeperError> {
+        if self.is_ended() {
+            return Err(MinesweeperError::GameEnded);
+        }
+
         if !self.board[row * self.width + col].is_revealed {
             self.click_unrevealed(row, col)?;
             Ok(true)
@@ -144,6 +156,10 @@ impl Minesweeper {
     ///
     /// Panic if the target position is out of bounds.
     pub fn toggle_flag(&mut self, row: usize, col: usize) -> Result<(), MinesweeperError> {
+        if self.is_ended() {
+            return Err(MinesweeperError::GameEnded);
+        }
+
         if self.board[row * self.width + col].is_revealed {
             return Err(MinesweeperError::AlreadyRevealed);
         }
@@ -151,20 +167,7 @@ impl Minesweeper {
         self.board[row * self.width + col].is_flagged =
             !self.board[row * self.width + col].is_flagged;
 
-        self.check_game_state();
-
-        Ok(())
-    }
-
-    /// Check if the game was already end and the target position is in the board.
-    pub fn check_position_validity(&self, row: usize, col: usize) -> Result<(), MinesweeperError> {
-        if self.state != MinesweeperState::InProgress {
-            return Err(MinesweeperError::GameEnded);
-        }
-
-        if row >= self.height || col >= self.width {
-            return Err(MinesweeperError::OutOfBounds);
-        }
+        self.check_state();
 
         Ok(())
     }
@@ -180,7 +183,7 @@ impl Minesweeper {
         }
 
         self.reveal_from(row * self.width + col);
-        self.check_game_state();
+        self.check_state();
 
         Ok(())
     }
@@ -193,7 +196,7 @@ impl Minesweeper {
     ) -> Result<bool, MinesweeperError> {
         let mut is_changed = false;
 
-        if self.board[row * self.width + col].adjacent_mine > 0 {
+        if self.board[row * self.width + col].mine_adjacent > 0 {
             let mut adjacent_all = 0;
             let mut adjacent_revealed = 0;
             let mut adjacent_flagged = 0;
@@ -213,7 +216,7 @@ impl Minesweeper {
             let adjacent_unrevealed = adjacent_all - adjacent_revealed - adjacent_flagged;
 
             if adjacent_unrevealed > 0 {
-                if adjacent_flagged == self.board[row * self.width + col].adjacent_mine {
+                if adjacent_flagged == self.board[row * self.width + col].mine_adjacent {
                     let mut exploded = None;
 
                     self.get_adjacent_cells(row, col).for_each(|idx| {
@@ -242,7 +245,7 @@ impl Minesweeper {
 
                 if auto_flag
                     && adjacent_unrevealed + adjacent_flagged
-                        == self.board[row * self.width + col].adjacent_mine
+                        == self.board[row * self.width + col].mine_adjacent
                 {
                     self.get_adjacent_cells(row, col).for_each(|idx| {
                         if !self.board[idx].is_flagged && !self.board[idx].is_revealed {
@@ -253,14 +256,14 @@ impl Minesweeper {
                 }
             }
 
-            self.check_game_state();
+            self.check_state();
         }
 
         Ok(is_changed)
     }
 
     fn reveal_from(&mut self, idx: usize) {
-        if self.board[idx].adjacent_mine != 0 {
+        if self.board[idx].mine_adjacent != 0 {
             self.board[idx].is_revealed = true;
         } else {
             use std::collections::VecDeque;
@@ -276,7 +279,7 @@ impl Minesweeper {
                 {
                     if !self.board[neighbor_idx].is_flagged && !self.board[neighbor_idx].is_revealed
                     {
-                        if self.board[neighbor_idx].adjacent_mine == 0 {
+                        if self.board[neighbor_idx].mine_adjacent == 0 {
                             cell_idxs_to_reveal.push_back(neighbor_idx);
                         } else {
                             self.board[neighbor_idx].is_revealed = true;
@@ -287,7 +290,7 @@ impl Minesweeper {
         }
     }
 
-    fn check_game_state(&mut self) {
+    fn check_state(&mut self) {
         self.state = if self
             .board
             .iter()
@@ -307,24 +310,24 @@ impl Minesweeper {
                 .filter(|idx| self.board[*idx].is_mine)
                 .count();
 
-            self.board[idx].adjacent_mine = count;
+            self.board[idx].mine_adjacent = count;
         }
     }
 
-    fn get_adjacent_cells(&self, row: usize, col: usize) -> MinesweeperAdjacentCells {
-        MinesweeperAdjacentCells::new(row, col, self.height, self.width)
+    fn get_adjacent_cells(&self, row: usize, col: usize) -> AdjacentCells {
+        AdjacentCells::new(row, col, self.height, self.width)
     }
 }
 
 #[derive(Clone)]
-struct MinesweeperAdjacentCells {
+struct AdjacentCells {
     around: [(i128, i128); 8],
     board_height: i128,
     board_width: i128,
     offset: usize,
 }
 
-impl Iterator for MinesweeperAdjacentCells {
+impl Iterator for AdjacentCells {
     type Item = usize;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -342,7 +345,7 @@ impl Iterator for MinesweeperAdjacentCells {
     }
 }
 
-impl MinesweeperAdjacentCells {
+impl AdjacentCells {
     fn new(row: usize, col: usize, board_height: usize, board_width: usize) -> Self {
         let (row, col, board_height, board_width) = (
             row as i128,
@@ -351,7 +354,7 @@ impl MinesweeperAdjacentCells {
             board_width as i128,
         );
 
-        MinesweeperAdjacentCells {
+        AdjacentCells {
             around: [
                 (row - 1, col - 1),
                 (row - 1, col),
@@ -376,8 +379,6 @@ use thiserror::Error;
 pub enum MinesweeperError {
     #[error("Too many mines")]
     TooManyMines,
-    #[error("Position out of bounds")]
-    OutOfBounds,
     #[error("Clicked an already flagged cell")]
     AlreadyFlagged,
     #[error("Clicked an already revealed cell")]

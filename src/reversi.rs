@@ -1,12 +1,14 @@
 //! The Reversi game.
 //!
+//! Check out struct [`Reversi`](https://docs.rs/gamie/*/gamie/reversi/struct.Reversi.html) for more information.
+//!
 //! # Examples
 //!
 //! ```rust
+//! # fn reversi() {
 //! use gamie::reversi::*;
 //!
-//! # fn reversi() {
-//! let mut game = Reversi::new();
+//! let mut game = Reversi::new().unwrap();
 //!
 //! game.place(2, 4, ReversiPlayer::Black).unwrap();
 //!
@@ -19,15 +21,16 @@
 //! # }
 //! ```
 
-/// The Reversi game itself.
+/// The Reversi game.
+/// If you pass an invalid position to a method, the game will panic. Remember to check the target position validity when dealing with user input.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Reversi {
     pub board: [[Option<ReversiPlayer>; 8]; 8],
     pub next: ReversiPlayer,
-    pub status: ReversiStatus,
+    pub state: ReversiState,
 }
 
-/// The Reversi game players.
+/// The game players.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ReversiPlayer {
     Black,
@@ -44,56 +47,65 @@ impl ReversiPlayer {
     }
 }
 
-/// The Reversi game status.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum ReversiStatus {
+/// The game state.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum ReversiState {
     Win(ReversiPlayer),
     Tie,
     InProgress,
 }
 
+use std::convert::Infallible;
+
 impl Reversi {
     /// Create a new Reversi game.
-    pub fn new() -> Self {
+    pub fn new() -> Result<Self, Infallible> {
         let mut board = [[None; 8]; 8];
         board[3][3] = Some(ReversiPlayer::Black);
         board[4][4] = Some(ReversiPlayer::Black);
         board[3][4] = Some(ReversiPlayer::White);
         board[4][3] = Some(ReversiPlayer::White);
 
-        Self {
+        Ok(Self {
             board,
             next: ReversiPlayer::Black,
-            status: ReversiStatus::InProgress,
-        }
+            state: ReversiState::InProgress,
+        })
     }
 
-    /// Get a cell in the board.
-    pub fn get(&self, row: usize, col: usize) -> Result<Option<ReversiPlayer>, ReversiError> {
-        if row > 7 || col > 7 {
-            return Err(ReversiError::OutOfBounds);
-        }
+    /// Get a cell reference from the game board.
+    /// Panic if the target position is out of bounds.
+    pub fn get(&self, row: usize, col: usize) -> Result<&Option<ReversiPlayer>, ReversiError> {
+        Ok(&self.board[row][col])
+    }
 
-        Ok(self.board[row][col])
+    /// Get a mutable cell reference from the game board.
+    /// Panic if the target position is out of bounds.
+    pub fn get_mut(
+        &mut self,
+        row: usize,
+        col: usize,
+    ) -> Result<&mut Option<ReversiPlayer>, ReversiError> {
+        Ok(&mut self.board[row][col])
     }
 
     /// Check if the game is ended.
     pub fn is_ended(&self) -> bool {
-        self.status != ReversiStatus::InProgress
+        self.state != ReversiState::InProgress
     }
 
-    /// Get the winner of the game. Return `None` if the game is tied or not ended.
+    /// Get the winner of the game. Return `None` if the game is tied or not ended yet.
     pub fn winner(&self) -> Option<ReversiPlayer> {
-        if let ReversiStatus::Win(player) = self.status {
+        if let ReversiState::Win(player) = self.state {
             Some(player)
         } else {
             None
         }
     }
 
-    /// Get the status of the game.
-    pub fn status(&self) -> ReversiStatus {
-        self.status
+    /// Get the state of the game.
+    pub fn state(&self) -> &ReversiState {
+        &self.state
     }
 
     /// Get the next player.
@@ -101,18 +113,14 @@ impl Reversi {
         self.next
     }
 
-    /// Get the board.
-    pub fn board(&self) -> &[[Option<ReversiPlayer>; 8]; 8] {
-        &self.board
-    }
-
     /// Place a piece on the board.
+    /// Panic if the target position is out of bounds.
     pub fn place(
         &mut self,
         row: usize,
         col: usize,
         player: ReversiPlayer,
-    ) -> Result<ReversiStatus, ReversiError> {
+    ) -> Result<(), ReversiError> {
         self.simple_check_position_validity(row, col, player)?;
 
         let mut flipped = false;
@@ -133,17 +141,18 @@ impl Reversi {
                 self.next = player;
 
                 if !self.can_player_move(player) {
-                    self.status = self.check_status();
+                    self.check_state();
                 }
             }
 
-            Ok(self.status)
+            Ok(())
         } else {
             Err(ReversiError::InvalidPosition)
         }
     }
 
     /// Check if a position is valid. Return the reason as `Err(ReversiError)` if it is not.
+    /// Panic if the target position is out of bounds.
     pub fn check_position_validity(
         &self,
         row: usize,
@@ -176,10 +185,6 @@ impl Reversi {
             return Err(ReversiError::WrongPlayer);
         }
 
-        if row > 7 || col > 7 {
-            return Err(ReversiError::OutOfBounds);
-        }
-
         if self.board[row][col].is_some() {
             return Err(ReversiError::PositionOccupied);
         }
@@ -188,16 +193,20 @@ impl Reversi {
     }
 
     fn can_player_move(&self, player: ReversiPlayer) -> bool {
-        self.board
-            .iter()
-            .flatten()
-            .enumerate()
-            .map(|(idx, cell)| (idx / 8, idx % 8, cell))
-            .filter(|(_, _, cell)| cell.is_none())
-            .any(|(row, col, _)| self.check_position_validity(row, col, player).is_ok())
+        for row in 0..8 {
+            for col in 0..8 {
+                if self.board[row][col].is_none()
+                    && self.check_position_validity(row, col, player).is_ok()
+                {
+                    return true;
+                }
+            }
+        }
+
+        false
     }
 
-    fn check_status(&self) -> ReversiStatus {
+    fn check_state(&mut self) {
         let mut black_count = 0;
         let mut white_count = 0;
 
@@ -210,11 +219,11 @@ impl Reversi {
 
         use std::cmp::Ordering;
 
-        match black_count.cmp(&white_count) {
-            Ordering::Less => ReversiStatus::Win(ReversiPlayer::White),
-            Ordering::Equal => ReversiStatus::Tie,
-            Ordering::Greater => ReversiStatus::Win(ReversiPlayer::Black),
-        }
+        self.state = match black_count.cmp(&white_count) {
+            Ordering::Less => ReversiState::Win(ReversiPlayer::White),
+            Ordering::Equal => ReversiState::Tie,
+            Ordering::Greater => ReversiState::Win(ReversiPlayer::Black),
+        };
     }
 
     fn flip(
@@ -319,8 +328,6 @@ use thiserror::Error;
 pub enum ReversiError {
     #[error("Wrong player")]
     WrongPlayer,
-    #[error("Position out of bounds")]
-    OutOfBounds,
     #[error("Position already occupied")]
     PositionOccupied,
     #[error("Invalid position")]
@@ -335,17 +342,11 @@ mod tests {
 
     #[test]
     fn test() {
-        let mut game = Reversi::new();
+        let mut game = Reversi::new().unwrap();
 
-        assert_eq!(
-            game.place(2, 4, ReversiPlayer::Black),
-            Ok(ReversiStatus::InProgress)
-        );
+        assert_eq!(game.place(2, 4, ReversiPlayer::Black), Ok(()));
 
-        assert_eq!(
-            game.place(2, 3, ReversiPlayer::White),
-            Ok(ReversiStatus::InProgress)
-        );
+        assert_eq!(game.place(2, 3, ReversiPlayer::White), Ok(()));
 
         assert_eq!(
             game.place(2, 6, ReversiPlayer::White),
