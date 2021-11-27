@@ -116,12 +116,20 @@ impl Minesweeper {
     /// Get a cell reference from the game board.
     /// Panic if the target position is out of bounds.
     pub fn get(&self, row: usize, col: usize) -> &MinesweeperCell {
+        if row >= self.height || col >= self.width {
+            panic!("Invalid position: ({}, {})", row, col);
+        }
+
         &self.board[row * self.width + col]
     }
 
     /// Get a mutable cell reference from the game board.
     /// Panic if the target position is out of bounds.
     pub fn get_mut(&mut self, row: usize, col: usize) -> &mut MinesweeperCell {
+        if row >= self.height || col >= self.width {
+            panic!("Invalid position: ({}, {})", row, col);
+        }
+
         &mut self.board[row * self.width + col]
     }
 
@@ -139,6 +147,10 @@ impl Minesweeper {
         col: usize,
         auto_flag: bool,
     ) -> Result<bool, MinesweeperError> {
+        if row >= self.height || col >= self.width {
+            panic!("Invalid position: ({}, {})", row, col);
+        }
+
         if self.is_ended() {
             return Err(MinesweeperError::GameEnded);
         }
@@ -156,6 +168,10 @@ impl Minesweeper {
     ///
     /// Panic if the target position is out of bounds.
     pub fn toggle_flag(&mut self, row: usize, col: usize) -> Result<(), MinesweeperError> {
+        if row >= self.height || col >= self.width {
+            panic!("Invalid position: ({}, {})", row, col);
+        }
+
         if self.is_ended() {
             return Err(MinesweeperError::GameEnded);
         }
@@ -321,9 +337,9 @@ impl Minesweeper {
 
 #[derive(Clone)]
 struct AdjacentCells {
-    around: [(i128, i128); 8],
-    board_height: i128,
-    board_width: i128,
+    around: [(isize, isize); 8],
+    board_height: isize,
+    board_width: isize,
     offset: usize,
 }
 
@@ -348,10 +364,10 @@ impl Iterator for AdjacentCells {
 impl AdjacentCells {
     fn new(row: usize, col: usize, board_height: usize, board_width: usize) -> Self {
         let (row, col, board_height, board_width) = (
-            row as i128,
-            col as i128,
-            board_height as i128,
-            board_width as i128,
+            row as isize,
+            col as isize,
+            board_height as isize,
+            board_width as isize,
         );
 
         AdjacentCells {
