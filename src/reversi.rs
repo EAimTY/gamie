@@ -287,10 +287,7 @@ impl Reversi {
     }
 }
 
-use strum::IntoEnumIterator;
-use strum_macros::EnumIter;
-
-#[derive(Clone, Copy, Debug, EnumIter, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 enum Direction {
     Upper,
     UpperRight,
@@ -314,6 +311,20 @@ impl Direction {
             Direction::Left => (0, -1),
             Direction::UpperLeft => (-1, -1),
         }
+    }
+
+    fn iter() -> impl Iterator<Item = Self> {
+        [
+            Direction::Upper,
+            Direction::UpperRight,
+            Direction::Right,
+            Direction::LowerRight,
+            Direction::Lower,
+            Direction::LowerLeft,
+            Direction::Left,
+            Direction::UpperLeft,
+        ]
+        .into_iter()
     }
 }
 
