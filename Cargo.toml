@@ -3,7 +3,7 @@ name = "gamie"
 version = "0.3.0"
 authors = ["EAimTY <ea.imty@gmail.com>"]
 description = "A Rust library provides abstractions for several classic tiny games"
-keywords = ["gamie", "board", "game"]
+keywords = ["game", "board", "chess", "minesweeper", "reversi"]
 edition = "2021"
 readme = "README.md"
 license = "GPL-3.0-or-later"
@@ -12,13 +12,13 @@ repository = "https://github.com/EAimTY/gamie"
 [features]
 default = []
 all = ["minesweeper", "reversi", "tictactoe"]
-minesweeper = []
-reversi = []
+minesweeper = ["itertools", "rand"]
+reversi = ["itertools"]
 tictactoe = []
 
 [dependencies]
-itertools = "0.10"
-rand = "0.8"
+itertools = {version = "0.10", optional = true}
+rand = {version = "0.8", optional = true}
 thiserror = "1.0"
 
 [dev-dependencies]

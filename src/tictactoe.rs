@@ -15,7 +15,7 @@
 //!
 //! // ...
 //!
-//! dbg!(game.state());
+//! println!(game.state());
 //! # }
 //! ```
 
