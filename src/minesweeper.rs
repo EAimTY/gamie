@@ -7,11 +7,12 @@
 //! ```rust
 //! # fn minesweeper() {
 //! use gamie::minesweeper::*;
+//! use rand::rngs::ThreadRng;
 //!
-//! let mut game = Minesweeper::new(8, 8, 9).unwrap();
-//! game.click(7, 7, true).unwrap();
-//! // ...
+//! let mut game = Minesweeper::new(8, 8, 9, &mut ThreadRng::default()).unwrap();
 //! game.toggle_flag(3, 2).unwrap();
+//! // ...
+//! game.click(7, 7, true).unwrap();
 //! // ...
 //! # }
 //! ```
@@ -79,7 +80,21 @@ pub enum MinesweeperState {
 }
 
 impl Minesweeper {
-    /// Create a new Minesweeper game. Return `Err(MinesweeperError::TooManyMines)` if `height * width < mines`.
+    /// Create a new Minesweeper game.
+    ///
+    /// A mutable reference of a random number generator is required for randomizing mines' position.
+    ///
+    /// Return `Err(MinesweeperError::TooManyMines)` if `height * width < mines`.
+    ///
+    /// # Examples
+    /// ```rust
+    /// # fn minesweeper() {
+    /// use gamie::minesweeper::Minesweeper;
+    /// use rand::rngs::ThreadRng;
+    ///
+    /// let mut game = Minesweeper::new(8, 8, 9, &mut ThreadRng::default()).unwrap();
+    /// # }
+    /// ```
     pub fn new<R: Rng>(
         height: usize,
         width: usize,
@@ -110,6 +125,8 @@ impl Minesweeper {
 
     /// Randomize the Minesweeper board.
     /// Useful if the first click is on a mine.
+    ///
+    /// A mutable reference of a random number generator is required for randomizing mines' position.
     pub fn randomize<R: Rng>(&mut self, rng: &mut R) -> Result<(), MinesweeperError> {
         if self.is_ended() {
             return Err(MinesweeperError::GameEnded);

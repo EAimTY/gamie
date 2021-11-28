@@ -15,7 +15,7 @@
 //!
 //! // ...
 //!
-//! println!(game.state());
+//! println!("{:?}", game.state());
 //! # }
 //! ```
 
