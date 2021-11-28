@@ -11,8 +11,8 @@ repository = "https://github.com/EAimTY/gamie"
 
 [features]
 default = ["std"]
-all = ["std", "serde", "minesweeper", "reversi", "tictactoe"]
-std = ["itertools/use_std", "rand/std", "rand/std_rng", "serde/std"]
+all = ["serde", "minesweeper", "reversi", "tictactoe"]
+std = ["itertools/use_std", "serde/std", "snafu/std"]
 minesweeper = ["itertools", "rand"]
 reversi = ["itertools"]
 tictactoe = []
@@ -20,11 +20,12 @@ tictactoe = []
 [dependencies]
 itertools = { version = "0.10", default-features = false, optional = true }
 rand = { version = "0.8", default-features = false, optional = true }
-serde = { version = "1.0", features = ["derive"], default-features = false, optional = true }
-thiserror = "1.0"
+serde = { version = "1.0", features = ["alloc", "derive"], default-features = false, optional = true }
+snafu = { version = "0.6", default-features = false }
 
 [dev-dependencies]
 gamie = { path = ".", features = ["all"] }
+rand = "0.8"
 
 [package.metadata.docs.rs]
 all-features = true

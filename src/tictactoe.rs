@@ -19,14 +19,16 @@
 //! # }
 //! ```
 
-#[cfg(not(feature = "std"))]
-use core::convert::Infallible;
-
 #[cfg(feature = "std")]
 use std::convert::Infallible;
 
+#[cfg(not(feature = "std"))]
+use core::convert::Infallible;
+
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+
+use snafu::Snafu;
 
 /// The Tic-Tac-Toe game.
 /// If you pass an invalid position to a method, the game will panic. Remember to check the target position validity when dealing with user input.
@@ -186,16 +188,14 @@ impl TicTacToe {
     }
 }
 
-use thiserror::Error;
-
 /// Errors that can occur when placing a piece on the board.
-#[derive(Debug, Eq, Error, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Snafu)]
 pub enum TicTacToeError {
-    #[error("Wrong player")]
+    #[snafu(display("Wrong player"))]
     WrongPlayer,
-    #[error("Position already been occupied")]
+    #[snafu(display("Position already been occupied"))]
     PositionOccupied,
-    #[error("The game was already ended")]
+    #[snafu(display("The game was already ended"))]
     GameEnded,
 }
 

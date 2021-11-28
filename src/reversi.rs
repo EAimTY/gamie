@@ -21,14 +21,16 @@
 //! # }
 //! ```
 
-#[cfg(not(feature = "std"))]
-use core::{cmp::Ordering, convert::Infallible};
-
 #[cfg(feature = "std")]
 use std::{cmp::Ordering, convert::Infallible};
 
+#[cfg(not(feature = "std"))]
+use core::{cmp::Ordering, convert::Infallible};
+
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+
+use snafu::Snafu;
 
 /// The Reversi game.
 /// If you pass an invalid position to a method, the game will panic. Remember to check the target position validity when dealing with user input.
@@ -339,18 +341,16 @@ impl Direction {
     }
 }
 
-use thiserror::Error;
-
 /// Errors that can occur when placing a piece on the board.
-#[derive(Debug, Eq, Error, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Snafu)]
 pub enum ReversiError {
-    #[error("Wrong player")]
+    #[snafu(display("Wrong player"))]
     WrongPlayer,
-    #[error("Position already occupied")]
+    #[snafu(display("Position already occupied"))]
     PositionOccupied,
-    #[error("Invalid position")]
+    #[snafu(display("Invalid position"))]
     InvalidPosition,
-    #[error("The game was already ended")]
+    #[snafu(display("The game was already ended"))]
     GameEnded,
 }
 

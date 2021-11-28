@@ -16,14 +16,20 @@
 //! # }
 //! ```
 
-#[cfg(not(feature = "std"))]
-use alloc::{collections::VecDeque, vec::Vec};
-
 #[cfg(feature = "std")]
 use std::collections::VecDeque;
 
+#[cfg(not(feature = "std"))]
+use alloc::{collections::VecDeque, vec::Vec};
+
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+
+use rand::{
+    distributions::{Distribution, Uniform},
+    Rng,
+};
+use snafu::Snafu;
 
 /// The Minesweeper game.
 ///
@@ -74,7 +80,12 @@ pub enum MinesweeperState {
 
 impl Minesweeper {
     /// Create a new Minesweeper game. Return `Err(MinesweeperError::TooManyMines)` if `height * width < mines`.
-    pub fn new(height: usize, width: usize, mines: usize) -> Result<Self, MinesweeperError> {
+    pub fn new<R: Rng>(
+        height: usize,
+        width: usize,
+        mines: usize,
+        rng: &mut R,
+    ) -> Result<Self, MinesweeperError> {
         if height * width < mines {
             return Err(MinesweeperError::TooManyMines);
         }
@@ -92,25 +103,22 @@ impl Minesweeper {
             width,
             state: MinesweeperState::InProgress,
         };
-        minesweeper.randomize().unwrap();
+        minesweeper.randomize(rng).unwrap();
 
         Ok(minesweeper)
     }
 
     /// Randomize the Minesweeper board.
     /// Useful if the first click is on a mine.
-    pub fn randomize(&mut self) -> Result<(), MinesweeperError> {
+    pub fn randomize<R: Rng>(&mut self, rng: &mut R) -> Result<(), MinesweeperError> {
         if self.is_ended() {
             return Err(MinesweeperError::GameEnded);
         }
 
-        use rand::distributions::{Distribution, Uniform};
-
-        let mut rng = rand::thread_rng();
         let range = Uniform::from(0..self.height * self.width);
 
         for idx in 0..self.height * self.width {
-            self.board.swap(idx, range.sample(&mut rng));
+            self.board.swap(idx, range.sample(rng));
         }
 
         self.update_around_mine_count();
@@ -401,17 +409,15 @@ impl AdjacentCells {
     }
 }
 
-use thiserror::Error;
-
 /// Errors that can occur.
-#[derive(Debug, Eq, Error, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Snafu)]
 pub enum MinesweeperError {
-    #[error("Too many mines")]
+    #[snafu(display("Too many mines"))]
     TooManyMines,
-    #[error("Clicked an already flagged cell")]
+    #[snafu(display("Clicked an already flagged cell"))]
     AlreadyFlagged,
-    #[error("Clicked an already revealed cell")]
+    #[snafu(display("Clicked an already revealed cell"))]
     AlreadyRevealed,
-    #[error("The game was already ended")]
+    #[snafu(display("The game was already ended"))]
     GameEnded,
 }
