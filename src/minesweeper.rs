@@ -6,10 +6,11 @@
 //!
 //! ```rust
 //! # fn minesweeper() {
-//! use gamie::minesweeper::*;
+//! use gamie::minesweeper::Minesweeper;
 //! use rand::rngs::ThreadRng;
 //!
 //! let mut game = Minesweeper::new(8, 8, 9, &mut ThreadRng::default()).unwrap();
+//!
 //! game.toggle_flag(3, 2).unwrap();
 //! // ...
 //! game.click(7, 7, true).unwrap();
@@ -41,24 +42,24 @@ use snafu::Snafu;
 #[cfg(feature = "serde")]
 #[derive(Deserialize, Serialize)]
 pub struct Minesweeper {
-    pub board: Vec<MinesweeperCell>,
+    pub board: Vec<Cell>,
     pub height: usize,
     pub width: usize,
-    pub state: MinesweeperState,
+    pub state: GameState,
 }
 
 /// The cell of the Minesweeper board.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[cfg(feature = "serde")]
 #[derive(Deserialize, Serialize)]
-pub struct MinesweeperCell {
+pub struct Cell {
     pub is_mine: bool,
     pub mine_adjacent: usize,
     pub is_revealed: bool,
     pub is_flagged: bool,
 }
 
-impl MinesweeperCell {
+impl Cell {
     fn new(is_mine: bool) -> Self {
         Self {
             is_mine,
@@ -73,7 +74,7 @@ impl MinesweeperCell {
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg(feature = "serde")]
 #[derive(Deserialize, Serialize)]
-pub enum MinesweeperState {
+pub enum GameState {
     Win,
     Exploded(Vec<(usize, usize)>),
     InProgress,
@@ -105,9 +106,9 @@ impl Minesweeper {
             return Err(MinesweeperError::TooManyMines);
         }
 
-        let board = itertools::repeat_n(MinesweeperCell::new(true), mines)
+        let board = itertools::repeat_n(Cell::new(true), mines)
             .chain(itertools::repeat_n(
-                MinesweeperCell::new(false),
+                Cell::new(false),
                 height * width - mines,
             ))
             .collect();
@@ -116,7 +117,7 @@ impl Minesweeper {
             board,
             height,
             width,
-            state: MinesweeperState::InProgress,
+            state: GameState::InProgress,
         };
         minesweeper.randomize(rng).unwrap();
 
@@ -145,17 +146,17 @@ impl Minesweeper {
 
     /// Check if the game is already ended.
     pub fn is_ended(&self) -> bool {
-        self.state != MinesweeperState::InProgress
+        self.state != GameState::InProgress
     }
 
     /// Get the state of the game.
-    pub fn state(&self) -> &MinesweeperState {
+    pub fn state(&self) -> &GameState {
         &self.state
     }
 
     /// Get a cell reference from the game board.
     /// Panic if the target position is out of bounds.
-    pub fn get(&self, row: usize, col: usize) -> &MinesweeperCell {
+    pub fn get(&self, row: usize, col: usize) -> &Cell {
         if row >= self.height || col >= self.width {
             panic!("Invalid position: ({}, {})", row, col);
         }
@@ -165,7 +166,7 @@ impl Minesweeper {
 
     /// Get a mutable cell reference from the game board.
     /// Panic if the target position is out of bounds.
-    pub fn get_mut(&mut self, row: usize, col: usize) -> &mut MinesweeperCell {
+    pub fn get_mut(&mut self, row: usize, col: usize) -> &mut Cell {
         if row >= self.height || col >= self.width {
             panic!("Invalid position: ({}, {})", row, col);
         }
@@ -234,7 +235,7 @@ impl Minesweeper {
         }
 
         if self.board[row * self.width + col].is_mine {
-            self.state = MinesweeperState::Exploded(vec![(row, col)]);
+            self.state = GameState::Exploded(vec![(row, col)]);
             return Ok(());
         }
 
@@ -294,7 +295,7 @@ impl Minesweeper {
                     });
 
                     if let Some(exploded) = exploded {
-                        self.state = MinesweeperState::Exploded(exploded);
+                        self.state = GameState::Exploded(exploded);
                         return Ok(true);
                     }
                 }
@@ -351,9 +352,9 @@ impl Minesweeper {
             .filter(|cell| !cell.is_mine)
             .all(|cell| cell.is_revealed)
         {
-            MinesweeperState::Win
+            GameState::Win
         } else {
-            MinesweeperState::InProgress
+            GameState::InProgress
         };
     }
 

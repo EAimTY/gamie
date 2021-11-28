@@ -16,7 +16,7 @@
 //! Now you can use the `tictactoe`:
 //!
 //! ```rust
-//! use gamie::tictactoe::*;
+//! use gamie::tictactoe::{TicTacToe, Player as TicTacToePlayer, GameState as TicTacToeGameState};
 //!
 //! # fn tictactoe() {
 //! let mut game = TicTacToe::new().unwrap();
@@ -30,7 +30,7 @@
 //! game.place(TicTacToePlayer::O, 0, 1).unwrap();
 //! game.place(TicTacToePlayer::X, 2, 2).unwrap();
 //! assert!(game.is_ended());
-//! assert_eq!(game.state(), &TicTacToeState::Tie);
+//! assert_eq!(game.state(), &TicTacToeGameState::Tie);
 //! # }
 //! ```
 //!
@@ -53,7 +53,7 @@
 //!
 //! ## no_std
 //! This crate can run flawlessly on bare metal.
-//! Opt out the `std` feature to remove the Rust standard library dependency by disabling `default-features` in `Cargo.toml`.
+//! Opt out the `std` feature by disabling `default-features` in `Cargo.toml` to remove the Rust standard library dependency.
 //!
 //! ```toml
 //! [dependencies]
