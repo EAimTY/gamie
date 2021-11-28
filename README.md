@@ -1,6 +1,10 @@
 # gamie
 A Rust library provides abstractions for several classic tiny games.
 
+[![Version](https://img.shields.io/crates/v/gamie.svg?style=flat)](https://crates.io/crates/gamie)
+[![Documentation](https://img.shields.io/badge/docs-release-brightgreen.svg?style=flat)](https://docs.rs/gamie)
+[![License](https://img.shields.io/crates/l/gamie.svg?style=flat)](https://github.com/EAimTY/gamie/blob/master/LICENSE)
+
 gamie aims to provide simple yet adequate abstractions for several classic tiny games.
 
 gamie is quite lightweight - came with few dependencies, no AI, just pure game implementions. It can be easily integrated into your projects.
