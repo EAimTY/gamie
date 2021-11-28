@@ -96,7 +96,7 @@ impl Minesweeper {
     /// let mut game = Minesweeper::new(8, 8, 9, &mut ThreadRng::default()).unwrap();
     /// # }
     /// ```
-    pub fn new<R: Rng>(
+    pub fn new<R: Rng + ?Sized>(
         height: usize,
         width: usize,
         mines: usize,
@@ -128,7 +128,7 @@ impl Minesweeper {
     /// Useful if the first click is on a mine.
     ///
     /// A mutable reference of a random number generator is required for randomizing mines' position.
-    pub fn randomize<R: Rng>(&mut self, rng: &mut R) -> Result<(), MinesweeperError> {
+    pub fn randomize<R: Rng + ?Sized>(&mut self, rng: &mut R) -> Result<(), MinesweeperError> {
         if self.is_ended() {
             return Err(MinesweeperError::GameEnded);
         }
