@@ -13,10 +13,16 @@
 //! ```
 
 #[cfg(feature = "std")]
-use std::convert::Infallible;
+use std::{
+    convert::Infallible,
+    ops::{Index, IndexMut},
+};
 
 #[cfg(not(feature = "std"))]
-use core::convert::Infallible;
+use core::{
+    convert::Infallible,
+    ops::{Index, IndexMut},
+};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -30,9 +36,51 @@ use snafu::Snafu;
 #[cfg(feature = "serde")]
 #[derive(Deserialize, Serialize)]
 pub struct ConnectFour {
-    pub board: [[Option<Player>; 6]; 7],
+    pub board: [Column; 7],
     pub next: Player,
     pub state: GameState,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg(feature = "serde")]
+#[derive(Deserialize, Serialize)]
+pub struct Column {
+    pub column: [Option<Player>; 6],
+    pub occupied: usize,
+}
+
+impl Column {
+    fn is_full(&self) -> bool {
+        self.occupied == 6
+    }
+
+    fn push(&mut self, player: Player) {
+        self.column[self.occupied] = Some(player);
+        self.occupied += 1;
+    }
+}
+
+impl Default for Column {
+    fn default() -> Self {
+        Self {
+            column: [None; 6],
+            occupied: 0,
+        }
+    }
+}
+
+impl Index<usize> for Column {
+    type Output = Option<Player>;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.column[index]
+    }
+}
+
+impl IndexMut<usize> for Column {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.column[index]
+    }
 }
 
 /// The game players.
@@ -65,10 +113,10 @@ pub enum GameState {
 }
 
 impl ConnectFour {
-    /// Create a new ConnectFour game.
+    /// Create a new Connect Four game.
     pub fn new() -> Result<Self, Infallible> {
         Ok(Self {
-            board: [[None; 6]; 7],
+            board: Default::default(),
             next: Player::Player1,
             state: GameState::InProgress,
         })
@@ -91,7 +139,7 @@ impl ConnectFour {
         self.state != GameState::InProgress
     }
 
-    /// Get the winner of the game. Return `None` if the game is tied or not ended yet.
+    /// Get the winner of the game. Return `None` if the game is tied or not end yet.
     pub fn winner(&self) -> Option<Player> {
         if let GameState::Win(player) = self.state {
             Some(player)
@@ -108,6 +156,27 @@ impl ConnectFour {
     /// Get the next player.
     pub fn get_next_player(&self) -> Player {
         self.next
+    }
+
+    /// Put a piece in the game board.
+    pub fn put(&mut self, col: usize, player: Player) -> Result<(), ConnectFourError> {
+        if self.is_ended() {
+            return Err(ConnectFourError::GameEnded);
+        }
+
+        if player != self.next {
+            return Err(ConnectFourError::WrongPlayer);
+        }
+
+        if self.board[col].is_full() {
+            return Err(ConnectFourError::ColumnFull);
+        }
+
+        self.board[col].push(player);
+
+        self.check_state();
+
+        Ok(())
     }
 
     fn check_state(&mut self) {
