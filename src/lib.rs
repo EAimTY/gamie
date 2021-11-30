@@ -39,6 +39,7 @@
 //! ## Modules
 //! Currently, the following modules are available:
 //!
+//! - [connect_four](https://docs.rs/gamie/*/gamie/connect_four)
 //! - [minesweeper](https://docs.rs/gamie/*/gamie/minesweeper)
 //! - [reversi](https://docs.rs/gamie/*/gamie/reversi)
 //! - [tictactoe](https://docs.rs/gamie/*/gamie/tictactoe)
@@ -62,9 +63,12 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-#[cfg(not(feature = "std"))]
+#[cfg(all(feature = "minesweeper", not(feature = "std")))]
 #[macro_use]
 extern crate alloc;
+
+#[cfg(feature = "connect_four")]
+pub mod connect_four;
 
 #[cfg(feature = "minesweeper")]
 pub mod minesweeper;

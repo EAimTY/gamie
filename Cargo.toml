@@ -11,8 +11,9 @@ repository = "https://github.com/EAimTY/gamie"
 
 [features]
 default = ["std"]
-all = ["serde", "minesweeper", "reversi", "tictactoe"]
+all = ["serde", "connect_four", "minesweeper", "reversi", "tictactoe"]
 std = ["itertools/use_std", "serde/std", "snafu/std"]
+connect_four = ["snafu"]
 minesweeper = ["itertools", "rand", "snafu"]
 reversi = ["itertools", "snafu"]
 tictactoe = ["snafu"]

@@ -41,6 +41,7 @@ Check the [docs](https://docs.rs/gamie) for further usage information.
 ## Modules
 Currently, the following modules are available:
 
+- [connect_four](https://docs.rs/gamie/*/gamie/connect_four)
 - [minesweeper](https://docs.rs/gamie/*/gamie/minesweeper)
 - [reversi](https://docs.rs/gamie/*/gamie/reversi)
 - [tictactoe](https://docs.rs/gamie/*/gamie/tictactoe)
