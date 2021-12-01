@@ -197,12 +197,16 @@ impl ConnectFour {
                     count = 1;
                 } else {
                     count += 1;
-                    if count == 4 && last.is_some() {
-                        self.state = GameState::Win(last.unwrap());
+                    if count == 4 && cell.is_some() {
+                        self.state = GameState::Win(cell.unwrap());
                         return;
                     }
                 }
             }
+        }
+
+        if (0..7).all(|col| !self.board[col][5].is_some()) {
+            self.state = GameState::Tie;
         }
     }
 
