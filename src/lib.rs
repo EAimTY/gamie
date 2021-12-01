@@ -20,15 +20,15 @@
 //!
 //! # fn tictactoe() {
 //! let mut game = TicTacToe::new().unwrap();
-//! game.place(TicTacToePlayer::X, 1, 1).unwrap();
-//! game.place(TicTacToePlayer::O, 0, 0).unwrap();
-//! game.place(TicTacToePlayer::X, 0, 2).unwrap();
-//! game.place(TicTacToePlayer::O, 2, 0).unwrap();
-//! game.place(TicTacToePlayer::X, 1, 0).unwrap();
-//! game.place(TicTacToePlayer::O, 1, 2).unwrap();
-//! game.place(TicTacToePlayer::X, 2, 1).unwrap();
-//! game.place(TicTacToePlayer::O, 0, 1).unwrap();
-//! game.place(TicTacToePlayer::X, 2, 2).unwrap();
+//! game.place(TicTacToePlayer::Player0, 1, 1).unwrap();
+//! game.place(TicTacToePlayer::Player1, 0, 0).unwrap();
+//! game.place(TicTacToePlayer::Player0, 0, 2).unwrap();
+//! game.place(TicTacToePlayer::Player1, 2, 0).unwrap();
+//! game.place(TicTacToePlayer::Player0, 1, 0).unwrap();
+//! game.place(TicTacToePlayer::Player1, 1, 2).unwrap();
+//! game.place(TicTacToePlayer::Player0, 2, 1).unwrap();
+//! game.place(TicTacToePlayer::Player1, 0, 1).unwrap();
+//! game.place(TicTacToePlayer::Player0, 2, 2).unwrap();
 //! assert!(game.is_ended());
 //! assert_eq!(game.state(), &TicTacToeGameState::Tie);
 //! # }

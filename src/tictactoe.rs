@@ -10,8 +10,8 @@
 //! # fn tictactoe() {
 //! let mut game = TicTacToe::new().unwrap();
 //!
-//! game.place(TicTacToePlayer::X, 1, 1).unwrap();
-//! game.place(TicTacToePlayer::O, 0, 0).unwrap();
+//! game.place(TicTacToePlayer::Player0, 1, 1).unwrap();
+//! game.place(TicTacToePlayer::Player1, 0, 0).unwrap();
 //!
 //! // ...
 //!
@@ -47,16 +47,16 @@ pub struct TicTacToe {
 #[cfg(feature = "serde")]
 #[derive(Deserialize, Serialize)]
 pub enum Player {
-    X,
-    O,
+    Player0,
+    Player1,
 }
 
 impl Player {
     /// Get the opposite player.
     pub fn other(self) -> Self {
         match self {
-            Player::X => Player::O,
-            Player::O => Player::X,
+            Player::Player0 => Player::Player1,
+            Player::Player1 => Player::Player0,
         }
     }
 }
@@ -76,7 +76,7 @@ impl TicTacToe {
     pub fn new() -> Result<Self, Infallible> {
         Ok(Self {
             board: [[None; 3]; 3],
-            next: Player::X,
+            next: Player::Player0,
             state: GameState::InProgress,
         })
     }
@@ -191,7 +191,7 @@ pub enum TicTacToeError {
     WrongPlayer,
     #[snafu(display("Position already been occupied"))]
     PositionOccupied,
-    #[snafu(display("The game was already ended"))]
+    #[snafu(display("The game was already end"))]
     GameEnded,
 }
 
@@ -203,42 +203,45 @@ mod tests {
     fn test() {
         let mut game = TicTacToe::new().unwrap();
 
-        assert_eq!(game.get_next_player(), Player::X,);
+        assert_eq!(game.get_next_player(), Player::Player0,);
 
-        assert_eq!(game.place(Player::X, 1, 1), Ok(()));
+        assert_eq!(game.place(Player::Player0, 1, 1), Ok(()));
 
-        assert_eq!(game.get_next_player(), Player::O,);
+        assert_eq!(game.get_next_player(), Player::Player1,);
 
         assert_eq!(
-            game.place(Player::X, 0, 0),
+            game.place(Player::Player0, 0, 0),
             Err(TicTacToeError::WrongPlayer)
         );
 
-        assert_eq!(game.place(Player::O, 1, 0), Ok(()));
+        assert_eq!(game.place(Player::Player1, 1, 0), Ok(()));
 
-        assert_eq!(game.get_next_player(), Player::X,);
+        assert_eq!(game.get_next_player(), Player::Player0,);
 
         assert!(!game.is_ended());
 
         assert_eq!(
-            game.place(Player::X, 1, 1),
+            game.place(Player::Player0, 1, 1),
             Err(TicTacToeError::PositionOccupied)
         );
 
-        assert_eq!(game.place(Player::X, 2, 2), Ok(()));
+        assert_eq!(game.place(Player::Player0, 2, 2), Ok(()));
 
         assert_eq!(game.state(), &GameState::InProgress);
 
-        assert_eq!(game.place(Player::O, 2, 0), Ok(()));
+        assert_eq!(game.place(Player::Player1, 2, 0), Ok(()));
 
-        assert_eq!(game.place(Player::X, 0, 0), Ok(()));
+        assert_eq!(game.place(Player::Player0, 0, 0), Ok(()));
 
         assert!(game.is_ended());
 
-        assert_eq!(game.winner(), Some(Player::X));
+        assert_eq!(game.winner(), Some(Player::Player0));
 
-        assert_eq!(game.place(Player::X, 0, 2), Err(TicTacToeError::GameEnded));
+        assert_eq!(
+            game.place(Player::Player0, 0, 2),
+            Err(TicTacToeError::GameEnded)
+        );
 
-        assert_eq!(game.winner(), Some(Player::X));
+        assert_eq!(game.winner(), Some(Player::Player0));
     }
 }

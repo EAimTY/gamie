@@ -10,12 +10,12 @@
 //!
 //! let mut game = Reversi::new().unwrap();
 //!
-//! game.place(2, 4, ReversiPlayer::Black).unwrap();
+//! game.place(2, 4, ReversiPlayer::Player0).unwrap();
 //!
 //! // The next player may not be able to place the piece in any position, so remember to check `get_next_player()`.
-//! assert_eq!(game.get_next_player(), ReversiPlayer::White);
+//! assert_eq!(game.get_next_player(), ReversiPlayer::Player1);
 //!
-//! game.place(2, 3, ReversiPlayer::White).unwrap();
+//! game.place(2, 3, ReversiPlayer::Player1).unwrap();
 //!
 //! // ...
 //! # }
@@ -49,16 +49,16 @@ pub struct Reversi {
 #[cfg(feature = "serde")]
 #[derive(Deserialize, Serialize)]
 pub enum Player {
-    Black,
-    White,
+    Player0,
+    Player1,
 }
 
 impl Player {
     /// Get the opposite player.
     pub fn other(self) -> Self {
         match self {
-            Player::Black => Player::White,
-            Player::White => Player::Black,
+            Player::Player0 => Player::Player1,
+            Player::Player1 => Player::Player0,
         }
     }
 }
@@ -77,14 +77,14 @@ impl Reversi {
     /// Create a new Reversi game.
     pub fn new() -> Result<Self, Infallible> {
         let mut board = [[None; 8]; 8];
-        board[3][3] = Some(Player::Black);
-        board[4][4] = Some(Player::Black);
-        board[3][4] = Some(Player::White);
-        board[4][3] = Some(Player::White);
+        board[3][3] = Some(Player::Player0);
+        board[4][4] = Some(Player::Player0);
+        board[3][4] = Some(Player::Player1);
+        board[4][3] = Some(Player::Player1);
 
         Ok(Self {
             board,
-            next: Player::Black,
+            next: Player::Player0,
             state: GameState::InProgress,
         })
     }
@@ -219,15 +219,15 @@ impl Reversi {
 
         for cell in self.board.iter().flatten().flatten() {
             match cell {
-                Player::Black => black_count += 1,
-                Player::White => white_count += 1,
+                Player::Player0 => black_count += 1,
+                Player::Player1 => white_count += 1,
             }
         }
 
         self.state = match black_count.cmp(&white_count) {
-            Ordering::Less => GameState::Win(Player::White),
+            Ordering::Less => GameState::Win(Player::Player1),
             Ordering::Equal => GameState::Tie,
-            Ordering::Greater => GameState::Win(Player::Black),
+            Ordering::Greater => GameState::Win(Player::Player0),
         };
     }
 
@@ -346,7 +346,7 @@ pub enum ReversiError {
     PositionOccupied,
     #[snafu(display("Invalid position"))]
     InvalidPosition,
-    #[snafu(display("The game was already ended"))]
+    #[snafu(display("The game was already end"))]
     GameEnded,
 }
 
@@ -358,17 +358,17 @@ mod tests {
     fn test() {
         let mut game = Reversi::new().unwrap();
 
-        assert_eq!(game.place(2, 4, Player::Black), Ok(()));
+        assert_eq!(game.place(2, 4, Player::Player0), Ok(()));
 
-        assert_eq!(game.place(2, 3, Player::White), Ok(()));
+        assert_eq!(game.place(2, 3, Player::Player1), Ok(()));
 
         assert_eq!(
-            game.place(2, 6, Player::White),
+            game.place(2, 6, Player::Player1),
             Err(ReversiError::WrongPlayer)
         );
 
         assert_eq!(
-            game.place(2, 6, Player::Black),
+            game.place(2, 6, Player::Player0),
             Err(ReversiError::InvalidPosition)
         );
     }

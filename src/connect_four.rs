@@ -9,8 +9,8 @@
 //! use gamie::connect_four::{ConnectFour, Player as ConnectFourPlayer};
 //!
 //! let mut game = ConnectFour::new().unwrap();
-//! game.put(3, ConnectFourPlayer::Player1).unwrap();
-//! game.put(2, ConnectFourPlayer::Player2).unwrap();
+//! game.put(3, ConnectFourPlayer::Player0).unwrap();
+//! game.put(2, ConnectFourPlayer::Player1).unwrap();
 //! // ...
 //! # }
 //! ```
@@ -94,16 +94,16 @@ impl IndexMut<usize> for Column {
 #[cfg(feature = "serde")]
 #[derive(Deserialize, Serialize)]
 pub enum Player {
+    Player0,
     Player1,
-    Player2,
 }
 
 impl Player {
     /// Get the opposite player.
     pub fn other(self) -> Self {
         match self {
-            Player::Player1 => Player::Player2,
-            Player::Player2 => Player::Player1,
+            Player::Player0 => Player::Player1,
+            Player::Player1 => Player::Player0,
         }
     }
 }
@@ -123,7 +123,7 @@ impl ConnectFour {
     pub fn new() -> Result<Self, Infallible> {
         Ok(Self {
             board: Default::default(),
-            next: Player::Player1,
+            next: Player::Player0,
             state: GameState::InProgress,
         })
     }
@@ -246,7 +246,7 @@ pub enum ConnectFourError {
     WrongPlayer,
     #[snafu(display("Full Column"))]
     ColumnFull,
-    #[snafu(display("The game is already ended"))]
+    #[snafu(display("The game is already end"))]
     GameEnded,
 }
 
@@ -257,21 +257,21 @@ mod tests {
     #[test]
     fn test() {
         let mut game = ConnectFour::new().unwrap();
-        game.put(3, Player::Player1).unwrap();
-        game.put(2, Player::Player2).unwrap();
+        game.put(3, Player::Player0).unwrap();
         game.put(2, Player::Player1).unwrap();
-        game.put(1, Player::Player2).unwrap();
+        game.put(2, Player::Player0).unwrap();
         game.put(1, Player::Player1).unwrap();
-        game.put(0, Player::Player2).unwrap();
-        game.put(3, Player::Player1).unwrap();
-        game.put(0, Player::Player2).unwrap();
-        game.put(1, Player::Player1).unwrap();
-        game.put(6, Player::Player2).unwrap();
-        game.put(2, Player::Player1).unwrap();
-        game.put(6, Player::Player2).unwrap();
-        game.put(3, Player::Player1).unwrap();
-        game.put(5, Player::Player2).unwrap();
+        game.put(1, Player::Player0).unwrap();
         game.put(0, Player::Player1).unwrap();
-        assert_eq!(Some(Player::Player1), game.winner());
+        game.put(3, Player::Player0).unwrap();
+        game.put(0, Player::Player1).unwrap();
+        game.put(1, Player::Player0).unwrap();
+        game.put(6, Player::Player1).unwrap();
+        game.put(2, Player::Player0).unwrap();
+        game.put(6, Player::Player1).unwrap();
+        game.put(3, Player::Player0).unwrap();
+        game.put(5, Player::Player1).unwrap();
+        game.put(0, Player::Player0).unwrap();
+        assert_eq!(Some(Player::Player0), game.winner());
     }
 }

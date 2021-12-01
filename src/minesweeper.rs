@@ -436,6 +436,6 @@ pub enum MinesweeperError {
     AlreadyFlagged,
     #[snafu(display("Clicked an already revealed cell"))]
     AlreadyRevealed,
-    #[snafu(display("The game was already ended"))]
+    #[snafu(display("The game was already end"))]
     GameEnded,
 }
