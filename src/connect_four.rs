@@ -8,6 +8,9 @@
 //! # fn connect_four() {
 //! use gamie::connect_four::{ConnectFour, Player as ConnectFourPlayer};
 //!
+//! let mut game = ConnectFour::new().unwrap();
+//! game.put(3, ConnectFourPlayer::Player1).unwrap();
+//! game.put(2, ConnectFourPlayer::Player2).unwrap();
 //! // ...
 //! # }
 //! ```
@@ -41,6 +44,9 @@ pub struct ConnectFour {
     pub state: GameState,
 }
 
+/// The column of the game board.
+///
+/// This is a stack-vector-like struct. You can access its inner elements by using index directly.
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg(feature = "serde")]
 #[derive(Deserialize, Serialize)]
@@ -158,7 +164,7 @@ impl ConnectFour {
         self.next
     }
 
-    /// Put a piece in the game board.
+    /// Put a piece into the game board.
     pub fn put(&mut self, col: usize, player: Player) -> Result<(), ConnectFourError> {
         if self.is_ended() {
             return Err(ConnectFourError::GameEnded);
@@ -173,6 +179,7 @@ impl ConnectFour {
         }
 
         self.board[col].push(player);
+        self.next = self.next.other();
 
         self.check_state();
 
@@ -245,8 +252,26 @@ pub enum ConnectFourError {
 
 #[cfg(test)]
 mod tests {
-    // use crate::connect_four::*;
+    use crate::connect_four::*;
 
     #[test]
-    fn test() {}
+    fn test() {
+        let mut game = ConnectFour::new().unwrap();
+        game.put(3, Player::Player1).unwrap();
+        game.put(2, Player::Player2).unwrap();
+        game.put(2, Player::Player1).unwrap();
+        game.put(1, Player::Player2).unwrap();
+        game.put(1, Player::Player1).unwrap();
+        game.put(0, Player::Player2).unwrap();
+        game.put(3, Player::Player1).unwrap();
+        game.put(0, Player::Player2).unwrap();
+        game.put(1, Player::Player1).unwrap();
+        game.put(6, Player::Player2).unwrap();
+        game.put(2, Player::Player1).unwrap();
+        game.put(6, Player::Player2).unwrap();
+        game.put(3, Player::Player1).unwrap();
+        game.put(5, Player::Player2).unwrap();
+        game.put(0, Player::Player1).unwrap();
+        assert_eq!(Some(Player::Player1), game.winner());
+    }
 }
