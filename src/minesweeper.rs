@@ -18,11 +18,7 @@
 //! # }
 //! ```
 
-#[cfg(feature = "std")]
-use std::collections::VecDeque;
-
-#[cfg(not(feature = "std"))]
-use alloc::{collections::VecDeque, vec::Vec};
+use crate::std_lib::{Vec, VecDeque};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -39,8 +35,7 @@ use snafu::Snafu;
 ///
 /// If you pass an invalid position to a method, the game will panic. Remember to check the target position validity when dealing with user input.
 #[derive(Clone, Debug)]
-#[cfg(feature = "serde")]
-#[derive(Deserialize, Serialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Minesweeper {
     board: Vec<Cell>,
     height: usize,
@@ -50,8 +45,7 @@ pub struct Minesweeper {
 
 /// The cell of the Minesweeper board.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[cfg(feature = "serde")]
-#[derive(Deserialize, Serialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Cell {
     pub is_mine: bool,
     pub mine_adjacent: usize,
@@ -72,8 +66,7 @@ impl Cell {
 
 /// The Minesweeper game state.
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg(feature = "serde")]
-#[derive(Deserialize, Serialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum GameState {
     Win,
     Exploded(Vec<(usize, usize)>),

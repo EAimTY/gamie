@@ -21,11 +21,7 @@
 //! # }
 //! ```
 
-#[cfg(feature = "std")]
-use std::{cmp::Ordering, convert::Infallible};
-
-#[cfg(not(feature = "std"))]
-use core::{cmp::Ordering, convert::Infallible};
+use crate::std_lib::{Infallible, Ordering};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -36,8 +32,7 @@ use snafu::Snafu;
 ///
 /// If you pass an invalid position to a method, the game will panic. Remember to check the target position validity when dealing with user input.
 #[derive(Clone, Debug)]
-#[cfg(feature = "serde")]
-#[derive(Deserialize, Serialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Reversi {
     board: [[Option<Player>; 8]; 8],
     next: Player,
@@ -46,8 +41,7 @@ pub struct Reversi {
 
 /// The game players.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[cfg(feature = "serde")]
-#[derive(Deserialize, Serialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum Player {
     Player0,
     Player1,
@@ -65,8 +59,7 @@ impl Player {
 
 /// The game state.
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg(feature = "serde")]
-#[derive(Deserialize, Serialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum GameState {
     Win(Player),
     Tie,

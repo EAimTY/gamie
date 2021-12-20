@@ -15,17 +15,7 @@
 //! # }
 //! ```
 
-#[cfg(feature = "std")]
-use std::{
-    convert::Infallible,
-    ops::{Index, IndexMut},
-};
-
-#[cfg(not(feature = "std"))]
-use core::{
-    convert::Infallible,
-    ops::{Index, IndexMut},
-};
+use crate::std_lib::{Index, IndexMut, Infallible};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -36,8 +26,7 @@ use snafu::Snafu;
 ///
 /// If you pass an invalid position to a method, the game will panic. Remember to check the target position validity when dealing with user input.
 #[derive(Clone, Debug)]
-#[cfg(feature = "serde")]
-#[derive(Deserialize, Serialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ConnectFour {
     board: [Column; 7],
     next: Player,
@@ -48,8 +37,7 @@ pub struct ConnectFour {
 ///
 /// This is a stack-vector-like struct. You can access its inner elements by using index directly.
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg(feature = "serde")]
-#[derive(Deserialize, Serialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 struct Column {
     column: [Option<Player>; 6],
     occupied: usize,
@@ -91,8 +79,7 @@ impl IndexMut<usize> for Column {
 
 /// The game players.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[cfg(feature = "serde")]
-#[derive(Deserialize, Serialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum Player {
     Player0,
     Player1,
@@ -110,8 +97,7 @@ impl Player {
 
 /// The game state.
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg(feature = "serde")]
-#[derive(Deserialize, Serialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum GameState {
     Win(Player),
     Tie,
