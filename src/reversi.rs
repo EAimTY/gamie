@@ -39,9 +39,9 @@ use snafu::Snafu;
 #[cfg(feature = "serde")]
 #[derive(Deserialize, Serialize)]
 pub struct Reversi {
-    pub board: [[Option<Player>; 8]; 8],
-    pub next: Player,
-    pub state: GameState,
+    board: [[Option<Player>; 8]; 8],
+    next: Player,
+    state: GameState,
 }
 
 /// The game players.
@@ -93,12 +93,6 @@ impl Reversi {
     /// Panic if the target position is out of bounds.
     pub fn get(&self, row: usize, col: usize) -> &Option<Player> {
         &self.board[row][col]
-    }
-
-    /// Get a mutable cell reference from the game board.
-    /// Panic if the target position is out of bounds.
-    pub fn get_mut(&mut self, row: usize, col: usize) -> &mut Option<Player> {
-        &mut self.board[row][col]
     }
 
     /// Check if the game is ended.

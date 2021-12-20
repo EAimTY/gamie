@@ -39,9 +39,9 @@ use snafu::Snafu;
 #[cfg(feature = "serde")]
 #[derive(Deserialize, Serialize)]
 pub struct ConnectFour {
-    pub board: [Column; 7],
-    pub next: Player,
-    pub state: GameState,
+    board: [Column; 7],
+    next: Player,
+    state: GameState,
 }
 
 /// The column of the game board.
@@ -50,9 +50,9 @@ pub struct ConnectFour {
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg(feature = "serde")]
 #[derive(Deserialize, Serialize)]
-pub struct Column {
-    pub column: [Option<Player>; 6],
-    pub occupied: usize,
+struct Column {
+    column: [Option<Player>; 6],
+    occupied: usize,
 }
 
 impl Column {
@@ -132,12 +132,6 @@ impl ConnectFour {
     /// Panic if the target position is out of bounds.
     pub fn get(&self, row: usize, col: usize) -> &Option<Player> {
         &self.board[5 - row][col]
-    }
-
-    /// Get a mutable cell reference from the game board.
-    /// Panic if the target position is out of bounds.
-    pub fn get_mut(&mut self, row: usize, col: usize) -> &mut Option<Player> {
-        &mut self.board[5 - row][col]
     }
 
     /// Check if the game is ended.

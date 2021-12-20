@@ -42,10 +42,10 @@ use snafu::Snafu;
 #[cfg(feature = "serde")]
 #[derive(Deserialize, Serialize)]
 pub struct Minesweeper {
-    pub board: Vec<Cell>,
-    pub height: usize,
-    pub width: usize,
-    pub state: GameState,
+    board: Vec<Cell>,
+    height: usize,
+    width: usize,
+    state: GameState,
 }
 
 /// The cell of the Minesweeper board.
@@ -162,16 +162,6 @@ impl Minesweeper {
         }
 
         &self.board[row * self.width + col]
-    }
-
-    /// Get a mutable cell reference from the game board.
-    /// Panic if the target position is out of bounds.
-    pub fn get_mut(&mut self, row: usize, col: usize) -> &mut Cell {
-        if row >= self.height || col >= self.width {
-            panic!("Invalid position: ({}, {})", row, col);
-        }
-
-        &mut self.board[row * self.width + col]
     }
 
     /// Click a cell on the game board.
