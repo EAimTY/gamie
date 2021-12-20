@@ -28,7 +28,7 @@ use snafu::Snafu;
 
 /// The Tic-Tac-Toe game.
 ///
-/// If you pass an invalid position to a method, the game will panic. Remember to check the target position validity when dealing with user input.
+/// Passing an invalid position to a method could cause a panic. Remember to check the target position validity when dealing with user input.
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct TicTacToe {

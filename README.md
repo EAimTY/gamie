@@ -36,7 +36,7 @@ assert!(game.is_ended());
 assert_eq!(game.state(), &TicTacToeGameState::Tie);
 ```
 
-Check the [docs](https://docs.rs/gamie) for further usage information.
+Check the [docs](https://docs.rs/gamie) for further information.
 
 ## Modules
 Currently, the following modules are available:

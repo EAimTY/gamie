@@ -33,7 +33,7 @@ use snafu::Snafu;
 ///
 /// To avoid unessecary memory allocation, the game board is stored in a single `Vec` rather than a nested one. Use the `get` method to access the board instead of using the `board` field directly.
 ///
-/// If you pass an invalid position to a method, the game will panic. Remember to check the target position validity when dealing with user input.
+/// Passing an invalid position to a method could cause a panic. Remember to check the target position validity when dealing with user input.
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Minesweeper {
