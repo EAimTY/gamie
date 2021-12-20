@@ -131,13 +131,13 @@ impl ConnectFour {
     /// Get a cell reference from the game board.
     /// Panic if the target position is out of bounds.
     pub fn get(&self, row: usize, col: usize) -> &Option<Player> {
-        &self.board[row][col]
+        &self.board[5 - row][col]
     }
 
     /// Get a mutable cell reference from the game board.
     /// Panic if the target position is out of bounds.
     pub fn get_mut(&mut self, row: usize, col: usize) -> &mut Option<Player> {
-        &mut self.board[row][col]
+        &mut self.board[5 - row][col]
     }
 
     /// Check if the game is ended.
