@@ -22,7 +22,7 @@ Now you can use the `tictactoe`:
 ```rust
 use gamie::tictactoe::{TicTacToe, Player as TicTacToePlayer, GameState as TicTacToeGameState};
 
-let mut game = TicTacToe::new();
+let mut game = TicTacToe::new().unwrap();
 game.place(TicTacToePlayer::Player0, 1, 1).unwrap();
 game.place(TicTacToePlayer::Player1, 0, 0).unwrap();
 game.place(TicTacToePlayer::Player0, 0, 2).unwrap();
@@ -33,7 +33,7 @@ game.place(TicTacToePlayer::Player0, 2, 1).unwrap();
 game.place(TicTacToePlayer::Player1, 0, 1).unwrap();
 game.place(TicTacToePlayer::Player0, 2, 2).unwrap();
 assert!(game.is_ended());
-assert_eq!(game.status(), TicTacToeGameState::Tie);
+assert_eq!(game.state(), &TicTacToeGameState::Tie);
 ```
 
 Check the [docs](https://docs.rs/gamie) for further usage information.

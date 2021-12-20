@@ -185,7 +185,7 @@ impl ConnectFour {
             }
         }
 
-        if (0..7).all(|col| !self.board[col][5].is_some()) {
+        if (0..7).all(|col| self.board[col][5].is_some()) {
             self.state = GameState::Tie;
         }
     }

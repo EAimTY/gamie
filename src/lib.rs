@@ -1,5 +1,6 @@
 #![doc = include_str!("../README.md")]
 #![cfg_attr(not(feature = "std"), no_std)]
+#![allow(unused_imports)]
 
 #[cfg(feature = "connect_four")]
 pub mod connect_four;
