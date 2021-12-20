@@ -7,7 +7,7 @@ A Rust library provides abstractions for several classic tiny games.
 
 gamie aims to provide simple yet adequate abstractions for several classic tiny games.
 
-gamie is quite lightweight - came with few dependencies, no AI, just pure game implementions. It can be easily integrated into your projects.
+gamie is quite lightweight, only came with a few dependencies, it can be easily integrated into your projects.
 
 ## Usage
 To use gamie, you should enable modules you need in `Cargo.toml`. For example `tictactoe`:
@@ -55,8 +55,8 @@ gamie = { version = "*", features = ["serde", "tictactoe"] }
 ```
 
 ## no_std
-This crate can run flawlessly on bare metal.
-Opt out the `std` feature by disabling `default-features` in `Cargo.toml` to remove the Rust standard library dependency.
+This crate runs flawlessly on bare metal.
+To remove the Rust standard library dependency, opt out the `std` feature by disabling `default-features` in `Cargo.toml`:
 
 ```toml
 [dependencies]

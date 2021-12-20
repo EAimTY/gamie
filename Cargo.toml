@@ -1,8 +1,9 @@
 [package]
 name = "gamie"
-version = "0.5.1"
+version = "0.6.0"
 authors = ["EAimTY <ea.imty@gmail.com>"]
 description = "A Rust library provides abstractions for several classic tiny games"
+categories = ["game", "game-engines", "no-std"]
 keywords = ["game", "board", "chess", "minesweeper", "reversi"]
 edition = "2021"
 readme = "README.md"
