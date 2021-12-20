@@ -5,6 +5,9 @@
 #[cfg(feature = "connect_four")]
 pub mod connect_four;
 
+#[cfg(feature = "gomoku")]
+pub mod gomoku;
+
 #[cfg(feature = "minesweeper")]
 pub mod minesweeper;
 
