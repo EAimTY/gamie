@@ -1,6 +1,6 @@
-//! The Minesweeper game.
+//! Minesweeper
 //!
-//! Check out struct [`Minesweeper`](https://docs.rs/gamie/*/gamie/minesweeper/struct.Minesweeper.html) for more information.
+//! Check struct [`Minesweeper`](https://docs.rs/gamie/*/gamie/minesweeper/struct.Minesweeper.html) for more information
 //!
 //! # Examples
 //!
@@ -29,21 +29,21 @@ use rand::{
 };
 use snafu::Snafu;
 
-/// The Minesweeper game.
+/// Minesweeper
 ///
-/// To avoid unessecary memory allocation, the game board is stored in a single `Vec` rather than a nested one. Use the `get` method to access the board instead of using the `board` field directly.
+/// To avoid unessecary memory allocation, the game board is stored in a single `Vec` rather than a nested one.
 ///
-/// Passing an invalid position to a method could cause a panic. Remember to check the target position validity when dealing with user input.
+/// Passing an invalid position to a method will cause panic. Check the target position validity first when dealing with user input
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Minesweeper {
     board: Vec<Cell>,
     height: usize,
     width: usize,
-    state: GameState,
+    status: GameState,
 }
 
-/// The cell of the Minesweeper board.
+/// The cell in the board.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Cell {
@@ -64,7 +64,7 @@ impl Cell {
     }
 }
 
-/// The Minesweeper game state.
+/// Game status
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum GameState {
@@ -74,11 +74,11 @@ pub enum GameState {
 }
 
 impl Minesweeper {
-    /// Create a new Minesweeper game.
+    /// Create a new Minesweeper game
     ///
-    /// A mutable reference of a random number generator is required for randomizing mines' position.
+    /// A mutable reference of a random number generator is required for randomizing mine positions
     ///
-    /// Return `Err(MinesweeperError::TooManyMines)` if `height * width < mines`.
+    /// Return `Err(MinesweeperError::TooManyMines)` if `height * width < mines`
     ///
     /// # Examples
     /// ```rust
@@ -108,17 +108,16 @@ impl Minesweeper {
             board,
             height,
             width,
-            state: GameState::InProgress,
+            status: GameState::InProgress,
         };
         minesweeper.randomize(rng).unwrap();
 
         Ok(minesweeper)
     }
 
-    /// Randomize the Minesweeper board.
-    /// Useful if the first click is on a mine.
+    /// Randomize the board
     ///
-    /// A mutable reference of a random number generator is required for randomizing mines' position.
+    /// A mutable reference of a random number generator is required for randomizing mine positions
     pub fn randomize<R: Rng + ?Sized>(&mut self, rng: &mut R) -> Result<(), MinesweeperError> {
         if self.is_ended() {
             return Err(MinesweeperError::GameEnded);
@@ -135,18 +134,8 @@ impl Minesweeper {
         Ok(())
     }
 
-    /// Check if the game is already ended.
-    pub fn is_ended(&self) -> bool {
-        self.state != GameState::InProgress
-    }
-
-    /// Get the state of the game.
-    pub fn state(&self) -> &GameState {
-        &self.state
-    }
-
-    /// Get a cell reference from the game board.
-    /// Panic if the target position is out of bounds.
+    /// Get a cell reference from the game board
+    /// Panic when target position out of bounds
     pub fn get(&self, row: usize, col: usize) -> &Cell {
         if row >= self.height || col >= self.width {
             panic!("Invalid position: ({}, {})", row, col);
@@ -155,14 +144,24 @@ impl Minesweeper {
         &self.board[row * self.width + col]
     }
 
-    /// Click a cell on the game board.
+    /// Check if the game was end
+    pub fn is_ended(&self) -> bool {
+        self.status != GameState::InProgress
+    }
+
+    /// Get the game status
+    pub fn status(&self) -> &GameState {
+        &self.status
+    }
+
+    /// Click a cell on the game board
     ///
-    /// Clicking an already revealed cell will unreveal its adjacent cells if the flagged cell count around it equals to its adjacent mine count.
-    /// When `auto_flag` is `true`, clicking an already revealed cell will flag its adjacent unflagged-unrevealed cells if the unflagged-revealed cell count around it equals to its adjacent mine count.
+    /// Clicking an already revealed cell will unreveal its adjacent cells if the flagged cell count around it equals to its adjacent mine count
+    /// When `auto_flag` is `true`, clicking an already revealed cell will flag its adjacent unflagged-unrevealed cells if the unflagged-revealed cell count around it equals to its adjacent mine count
     ///
-    /// The `bool` in the return value indicates if the game board is changed from the click.
+    /// The return value indicates if the game board is changed from the click
     ///
-    /// Panic if the target position is out of bounds.
+    /// Panic when target position out of bounds
     pub fn click(
         &mut self,
         row: usize,
@@ -185,10 +184,10 @@ impl Minesweeper {
         }
     }
 
-    /// Flag or unflag a cell on the Minesweeper board.
-    /// Return Err(MinesweeperError::AlreadyRevealed) if the target cell is already revealed.
+    /// Flag or unflag a cell on the board
+    /// Return Err(MinesweeperError::AlreadyRevealed) if the target cell is already revealed
     ///
-    /// Panic if the target position is out of bounds.
+    /// Panic when target position out of bounds
     pub fn toggle_flag(&mut self, row: usize, col: usize) -> Result<(), MinesweeperError> {
         if row >= self.height || col >= self.width {
             panic!("Invalid position: ({}, {})", row, col);
@@ -216,7 +215,7 @@ impl Minesweeper {
         }
 
         if self.board[row * self.width + col].is_mine {
-            self.state = GameState::Exploded(vec![(row, col)]);
+            self.status = GameState::Exploded(vec![(row, col)]);
             return Ok(());
         }
 
@@ -276,7 +275,7 @@ impl Minesweeper {
                     });
 
                     if let Some(exploded) = exploded {
-                        self.state = GameState::Exploded(exploded);
+                        self.status = GameState::Exploded(exploded);
                         return Ok(true);
                     }
                 }
@@ -327,7 +326,7 @@ impl Minesweeper {
     }
 
     fn check_state(&mut self) {
-        self.state = if self
+        self.status = if self
             .board
             .iter()
             .filter(|cell| !cell.is_mine)

@@ -1,6 +1,6 @@
-//! The Reversi game.
+//! Reversi
 //!
-//! Check out struct [`Reversi`](https://docs.rs/gamie/*/gamie/reversi/struct.Reversi.html) for more information.
+//! Check struct [`Reversi`](https://docs.rs/gamie/*/gamie/reversi/struct.Reversi.html) for more information
 //!
 //! # Examples
 //!
@@ -10,12 +10,12 @@
 //!
 //! let mut game = Reversi::new().unwrap();
 //!
-//! game.place(2, 4, ReversiPlayer::Player0).unwrap();
+//! game.place(ReversiPlayer::Player0, 2, 4).unwrap();
 //!
-//! // The next player may not be able to place the piece in any position, so remember to check `get_next_player()`.
+//! // The next player may not be able to place the piece in any position, so check the output of `get_next_player()`
 //! assert_eq!(game.get_next_player(), ReversiPlayer::Player1);
 //!
-//! game.place(2, 3, ReversiPlayer::Player1).unwrap();
+//! game.place(ReversiPlayer::Player1, 2, 3).unwrap();
 //!
 //! // ...
 //! # }
@@ -28,18 +28,18 @@ use serde::{Deserialize, Serialize};
 
 use snafu::Snafu;
 
-/// The Reversi game.
+/// Reversi
 ///
-/// Passing an invalid position to a method could cause a panic. Remember to check the target position validity when dealing with user input.
+/// Passing an invalid position to a method will cause panic. Check the target position validity first when dealing with user input
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Reversi {
     board: [[Option<Player>; 8]; 8],
     next: Player,
-    state: GameState,
+    status: GameState,
 }
 
-/// The game players.
+/// Players
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum Player {
@@ -48,7 +48,7 @@ pub enum Player {
 }
 
 impl Player {
-    /// Get the opposite player.
+    /// Get the opposite player
     pub fn other(self) -> Self {
         match self {
             Player::Player0 => Player::Player1,
@@ -57,7 +57,7 @@ impl Player {
     }
 }
 
-/// The game state.
+/// Game status
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum GameState {
@@ -67,7 +67,7 @@ pub enum GameState {
 }
 
 impl Reversi {
-    /// Create a new Reversi game.
+    /// Create a new Reversi game
     pub fn new() -> Result<Self, Infallible> {
         let mut board = [[None; 8]; 8];
         board[3][3] = Some(Player::Player0);
@@ -78,43 +78,43 @@ impl Reversi {
         Ok(Self {
             board,
             next: Player::Player0,
-            state: GameState::InProgress,
+            status: GameState::InProgress,
         })
     }
 
-    /// Get a cell reference from the game board.
-    /// Panic if the target position is out of bounds.
+    /// Get a cell reference from the game board
+    /// Panic when target position out of bounds
     pub fn get(&self, row: usize, col: usize) -> &Option<Player> {
         &self.board[row][col]
     }
 
-    /// Check if the game is ended.
+    /// Check if the game was end
     pub fn is_ended(&self) -> bool {
-        self.state != GameState::InProgress
+        self.status != GameState::InProgress
     }
 
-    /// Get the winner of the game. Return `None` if the game is tied or not ended yet.
+    /// Get the winner of the game. Return `None` when the game is tied or not end yet
     pub fn winner(&self) -> Option<Player> {
-        if let GameState::Win(player) = self.state {
+        if let GameState::Win(player) = self.status {
             Some(player)
         } else {
             None
         }
     }
 
-    /// Get the state of the game.
-    pub fn state(&self) -> &GameState {
-        &self.state
+    /// Get the game status
+    pub fn status(&self) -> &GameState {
+        &self.status
     }
 
-    /// Get the next player.
+    /// Get the next player
     pub fn get_next_player(&self) -> Player {
         self.next
     }
 
-    /// Place a piece on the board.
-    /// Panic if the target position is out of bounds.
-    pub fn place(&mut self, row: usize, col: usize, player: Player) -> Result<(), ReversiError> {
+    /// Place a piece on the board
+    /// Panic when target position out of bounds
+    pub fn place(&mut self, player: Player, row: usize, col: usize) -> Result<(), ReversiError> {
         self.simple_check_position_validity(row, col, player)?;
 
         let mut flipped = false;
@@ -145,8 +145,8 @@ impl Reversi {
         }
     }
 
-    /// Check if a position is valid. Return the reason as `Err(ReversiError)` if it is not.
-    /// Panic if the target position is out of bounds.
+    /// Check if a position is valid for placing piece
+    /// Panic when target position out of bounds
     pub fn check_position_validity(
         &self,
         row: usize,
@@ -180,7 +180,7 @@ impl Reversi {
         }
 
         if self.board[row][col].is_some() {
-            return Err(ReversiError::PositionOccupied);
+            return Err(ReversiError::OccupiedPosition);
         }
 
         Ok(())
@@ -211,7 +211,7 @@ impl Reversi {
             }
         }
 
-        self.state = match black_count.cmp(&white_count) {
+        self.status = match black_count.cmp(&white_count) {
             Ordering::Less => GameState::Win(Player::Player1),
             Ordering::Equal => GameState::Tie,
             Ordering::Greater => GameState::Win(Player::Player0),
@@ -324,13 +324,13 @@ impl Direction {
     }
 }
 
-/// Errors that can occur when placing a piece on the board.
+/// Errors that can occur when placing a piece on the board
 #[derive(Debug, Eq, PartialEq, Snafu)]
 pub enum ReversiError {
     #[snafu(display("Wrong player"))]
     WrongPlayer,
     #[snafu(display("Position already occupied"))]
-    PositionOccupied,
+    OccupiedPosition,
     #[snafu(display("Invalid position"))]
     InvalidPosition,
     #[snafu(display("The game was already end"))]
@@ -345,17 +345,17 @@ mod tests {
     fn test() {
         let mut game = Reversi::new().unwrap();
 
-        assert_eq!(game.place(2, 4, Player::Player0), Ok(()));
+        assert_eq!(game.place(Player::Player0, 2, 4), Ok(()));
 
-        assert_eq!(game.place(2, 3, Player::Player1), Ok(()));
+        assert_eq!(game.place(Player::Player1, 2, 3), Ok(()));
 
         assert_eq!(
-            game.place(2, 6, Player::Player1),
+            game.place(Player::Player1, 2, 6),
             Err(ReversiError::WrongPlayer)
         );
 
         assert_eq!(
-            game.place(2, 6, Player::Player0),
+            game.place(Player::Player0, 2, 6),
             Err(ReversiError::InvalidPosition)
         );
     }

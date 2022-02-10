@@ -1,6 +1,6 @@
-//! The Gomoku game.
+//! Gomoku game
 //!
-//! Check out struct [`Gomoku`](https://docs.rs/gamie/*/gamie/gomoku/struct.Gomoku.html) for more information.
+//! Check struct [`Gomoku`](https://docs.rs/gamie/*/gamie/gomoku/struct.Gomoku.html) for more information
 //!
 //! # Examples
 //!
@@ -22,18 +22,18 @@ use serde::{Deserialize, Serialize};
 
 use snafu::Snafu;
 
-/// The Gomoku game.
+/// Gomoku
 ///
-/// Passing an invalid position to a method could cause a panic. Remember to check the target position validity when dealing with user input.
+/// Passing an invalid position to a method will cause panic. Check the target position validity first when dealing with user input
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Gomoku {
     board: [[Option<Player>; 15]; 15],
     next: Player,
-    state: GameState,
+    status: GameState,
 }
 
-/// The Gomoku game players.
+/// Players
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum Player {
@@ -42,7 +42,7 @@ pub enum Player {
 }
 
 impl Player {
-    /// Get the opposite player.
+    /// Get the opposite player
     pub fn other(self) -> Self {
         match self {
             Player::Player0 => Player::Player1,
@@ -51,7 +51,7 @@ impl Player {
     }
 }
 
-/// The Gomoku game state.
+/// Game status
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum GameState {
@@ -66,41 +66,42 @@ impl Gomoku {
         Ok(Self {
             board: [[None; 15]; 15],
             next: Player::Player0,
-            state: GameState::InProgress,
+            status: GameState::InProgress,
         })
     }
 
-    /// Get a cell reference from the game board.
-    /// Panic if the target position is out of bounds.
+    /// Get a cell reference from the game board
+    /// Panic when target position out of bounds
     pub fn get(&self, row: usize, col: usize) -> &Option<Player> {
         &self.board[row][col]
     }
 
-    /// Check if the game is ended.
+    /// Check if the game was end
     pub fn is_ended(&self) -> bool {
-        self.state != GameState::InProgress
+        self.status != GameState::InProgress
     }
 
-    /// Get the winner of the game. Return `None` if the game is tied or not ended.
+    /// Get the winner of the game. Return `None` when the game is tied or not end yet
     pub fn winner(&self) -> Option<Player> {
-        if let GameState::Win(player) = self.state {
+        if let GameState::Win(player) = self.status {
             Some(player)
         } else {
             None
         }
     }
 
-    /// Get the state of the game.
-    pub fn state(&self) -> &GameState {
-        &self.state
+    /// Get the game status
+    pub fn status(&self) -> &GameState {
+        &self.status
     }
 
-    /// Get the next player.
+    /// Get the next player
     pub fn get_next_player(&self) -> Player {
         self.next
     }
 
-    /// Place a piece on the board.
+    /// Place a piece on the board
+    /// Panic when target position out of bounds
     pub fn place(&mut self, player: Player, row: usize, col: usize) -> Result<(), GomokuError> {
         if self.is_ended() {
             return Err(GomokuError::GameEnded);
@@ -111,7 +112,7 @@ impl Gomoku {
         }
 
         if self.board[row][col].is_some() {
-            return Err(GomokuError::PositionOccupied);
+            return Err(GomokuError::OccupiedPosition);
         }
 
         self.board[row][col] = Some(player);
@@ -134,7 +135,7 @@ impl Gomoku {
                 } else {
                     count += 1;
                     if count == 5 && cell.is_some() {
-                        self.state = GameState::Win(cell.unwrap());
+                        self.status = GameState::Win(cell.unwrap());
                         return;
                     }
                 }
@@ -142,7 +143,7 @@ impl Gomoku {
         }
 
         if self.board.iter().flatten().all(|cell| cell.is_some()) {
-            self.state = GameState::Tie;
+            self.status = GameState::Tie;
         }
     }
 
@@ -196,13 +197,13 @@ impl Gomoku {
     }
 }
 
-/// Errors that can occur when placing a piece on the board.
+/// Errors that can occur when placing a piece on the board
 #[derive(Debug, Eq, PartialEq, Snafu)]
 pub enum GomokuError {
     #[snafu(display("Wrong player"))]
     WrongPlayer,
-    #[snafu(display("Position already been occupied"))]
-    PositionOccupied,
+    #[snafu(display("Occupied position"))]
+    OccupiedPosition,
     #[snafu(display("The game was already end"))]
     GameEnded,
 }
