@@ -1,6 +1,21 @@
-//! Gomoku.
+//! The Gomoku game.
+//!
+//! Check out struct [`Gomoku`](https://docs.rs/gamie/*/gamie/gomoku/struct.Gomoku.html) for more information.
+//!
+//! # Examples
+//!
+//! ```rust
+//! # fn gomoku() {
+//! use gamie::gomoku::{Gomoku, Player as GomokuPlayer};
+//!
+//! let mut game = Gomoku::new().unwrap();
+//! game.place(GomokuPlayer::Player0, 7, 8).unwrap();
+//! game.place(GomokuPlayer::Player1, 8, 7).unwrap();
+//! // ...
+//! # }
+//! ```
 
-use crate::std_lib::Infallible;
+use crate::std_lib::{iter, Box, Infallible};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -108,7 +123,76 @@ impl Gomoku {
     }
 
     fn check_state(&mut self) {
-        todo!();
+        for connectable in Self::get_connectable() {
+            let mut last = None;
+            let mut count = 0u8;
+
+            for cell in connectable.map(|(row, col)| self.board[col][row]) {
+                if cell != last {
+                    last = cell;
+                    count = 1;
+                } else {
+                    count += 1;
+                    if count == 5 && cell.is_some() {
+                        self.state = GameState::Win(cell.unwrap());
+                        return;
+                    }
+                }
+            }
+        }
+
+        if self.board.iter().flatten().all(|cell| cell.is_some()) {
+            self.state = GameState::Tie;
+        }
+    }
+
+    fn get_connectable() -> impl Iterator<Item = Box<dyn Iterator<Item = (usize, usize)>>> {
+        let horizontal = (0usize..15).map(move |row| {
+            Box::new((0usize..15).map(move |col| (row, col)))
+                as Box<dyn Iterator<Item = (usize, usize)>>
+        });
+
+        let vertical = (0usize..15).map(move |col| {
+            Box::new((0usize..15).map(move |row| (row, col)))
+                as Box<dyn Iterator<Item = (usize, usize)>>
+        });
+
+        let horizontal_upper_left_to_lower_right = (0usize..15).map(move |col| {
+            Box::new(
+                iter::successors(Some((0usize, col)), |(row, col)| Some((row + 1, col + 1)))
+                    .take(15 - col),
+            ) as Box<dyn Iterator<Item = (usize, usize)>>
+        });
+
+        let vertical_upper_left_to_lower_right = (0usize..15).map(move |row| {
+            Box::new(
+                iter::successors(Some((row, 0usize)), |(row, col)| Some((row + 1, col + 1)))
+                    .take(15 - row),
+            ) as Box<dyn Iterator<Item = (usize, usize)>>
+        });
+
+        let horizontal_upper_right_to_lower_left = (0usize..15).map(move |col| {
+            Box::new(
+                iter::successors(Some((0usize, col)), |(row, col)| {
+                    col.checked_sub(1).map(|new_col| (row + 1, new_col))
+                })
+                .take(1 + col),
+            ) as Box<dyn Iterator<Item = (usize, usize)>>
+        });
+
+        let vertical_upper_right_to_lower_left = (0usize..15).map(move |row| {
+            Box::new(
+                iter::successors(Some((row, 14usize)), |(row, col)| Some((row + 1, col - 1)))
+                    .take(15 - row),
+            ) as Box<dyn Iterator<Item = (usize, usize)>>
+        });
+
+        horizontal
+            .chain(vertical)
+            .chain(horizontal_upper_left_to_lower_right)
+            .chain(vertical_upper_left_to_lower_right)
+            .chain(horizontal_upper_right_to_lower_left)
+            .chain(vertical_upper_right_to_lower_left)
     }
 }
 
