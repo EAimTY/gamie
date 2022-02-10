@@ -20,9 +20,11 @@ pub mod tictactoe;
 #[cfg(feature = "std")]
 mod std_lib {
     pub(crate) use std::{
+        boxed::Box,
         cmp::Ordering,
         collections::VecDeque,
         convert::Infallible,
+        iter,
         ops::{Index, IndexMut},
         vec::Vec,
     };
@@ -34,10 +36,11 @@ extern crate alloc;
 
 #[cfg(not(feature = "std"))]
 mod std_lib {
-    pub(crate) use alloc::{collections::VecDeque, vec::Vec};
+    pub(crate) use alloc::{boxed::Box, collections::VecDeque, vec::Vec};
     pub(crate) use core::{
         cmp::Ordering,
         convert::Infallible,
+        iter,
         ops::{Index, IndexMut},
     };
 }

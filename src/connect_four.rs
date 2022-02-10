@@ -15,7 +15,7 @@
 //! # }
 //! ```
 
-use crate::std_lib::{Index, IndexMut, Infallible};
+use crate::std_lib::{iter, Box, Index, IndexMut, Infallible};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -171,7 +171,7 @@ impl ConnectFour {
             let mut last = None;
             let mut count = 0u8;
 
-            for cell in connectable.iter().map(|(row, col)| self.board[*col][*row]) {
+            for cell in connectable.map(|(row, col)| self.board[col][row]) {
                 if cell != last {
                     last = cell;
                     count = 1;
@@ -190,36 +190,53 @@ impl ConnectFour {
         }
     }
 
-    fn get_connectable() -> impl Iterator<Item = &'static [(usize, usize)]> {
-        let connectable: &[&[(usize, usize)]] = &[
-            &[(0, 0), (0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6)],
-            &[(1, 0), (1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6)],
-            &[(2, 0), (2, 1), (2, 2), (2, 3), (2, 4), (2, 5), (2, 6)],
-            &[(3, 0), (3, 1), (3, 2), (3, 3), (3, 4), (3, 5), (3, 6)],
-            &[(4, 0), (4, 1), (4, 2), (4, 3), (4, 4), (4, 5), (4, 6)],
-            &[(5, 0), (5, 1), (5, 2), (5, 3), (5, 4), (5, 5), (5, 6)],
-            &[(0, 0), (1, 0), (2, 0), (3, 0), (4, 0), (5, 0)],
-            &[(0, 1), (1, 1), (2, 1), (3, 1), (4, 1), (5, 1)],
-            &[(0, 2), (1, 2), (2, 2), (3, 2), (4, 2), (5, 2)],
-            &[(0, 3), (1, 3), (2, 3), (3, 3), (4, 3), (5, 3)],
-            &[(0, 4), (1, 4), (2, 4), (3, 4), (4, 4), (5, 4)],
-            &[(0, 5), (1, 5), (2, 5), (3, 5), (4, 5), (5, 5)],
-            &[(0, 6), (1, 6), (2, 6), (3, 6), (4, 6), (5, 6)],
-            &[(0, 3), (1, 2), (2, 1), (3, 0)],
-            &[(0, 4), (1, 3), (2, 2), (3, 1), (4, 0)],
-            &[(0, 5), (1, 4), (2, 3), (3, 2), (4, 1), (5, 0)],
-            &[(0, 6), (1, 5), (2, 4), (3, 3), (4, 2), (5, 1)],
-            &[(1, 6), (2, 5), (3, 4), (4, 3), (5, 2)],
-            &[(2, 6), (3, 5), (4, 4), (5, 3)],
-            &[(2, 0), (3, 1), (4, 2), (5, 3)],
-            &[(1, 0), (2, 1), (3, 2), (4, 3), (5, 4)],
-            &[(0, 0), (1, 1), (2, 2), (3, 3), (4, 4), (5, 5)],
-            &[(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 6)],
-            &[(0, 2), (1, 3), (2, 4), (3, 5), (4, 6)],
-            &[(0, 3), (1, 4), (2, 5), (3, 6)],
-        ];
+    fn get_connectable() -> impl Iterator<Item = Box<dyn Iterator<Item = (usize, usize)>>> {
+        let horizontal = (0usize..6).map(move |row| {
+            Box::new((0usize..7).map(move |col| (row, col)))
+                as Box<dyn Iterator<Item = (usize, usize)>>
+        });
 
-        connectable.iter().map(|pos| *pos)
+        let vertical = (0usize..7).map(move |col| {
+            Box::new((0usize..6).map(move |row| (row, col)))
+                as Box<dyn Iterator<Item = (usize, usize)>>
+        });
+
+        let horizontal_upper_left_to_lower_right = (0usize..7).map(move |col| {
+            Box::new(
+                iter::successors(Some((0usize, col)), |(row, col)| Some((row + 1, col + 1)))
+                    .take((7 - col).min(6)),
+            ) as Box<dyn Iterator<Item = (usize, usize)>>
+        });
+
+        let vertical_upper_left_to_lower_right = (0usize..6).map(move |row| {
+            Box::new(
+                iter::successors(Some((row, 0usize)), |(row, col)| Some((row + 1, col + 1)))
+                    .take(6 - row),
+            ) as Box<dyn Iterator<Item = (usize, usize)>>
+        });
+
+        let horizontal_upper_right_to_lower_left = (0usize..7).map(move |col| {
+            Box::new(
+                iter::successors(Some((0usize, col)), |(row, col)| {
+                    col.checked_sub(1).map(|new_col| (row + 1, new_col))
+                })
+                .take((1 + col).min(6)),
+            ) as Box<dyn Iterator<Item = (usize, usize)>>
+        });
+
+        let vertical_upper_right_to_lower_left = (0usize..6).map(move |row| {
+            Box::new(
+                iter::successors(Some((row, 6usize)), |(row, col)| Some((row + 1, col - 1)))
+                    .take(6 - row),
+            ) as Box<dyn Iterator<Item = (usize, usize)>>
+        });
+
+        horizontal
+            .chain(vertical)
+            .chain(horizontal_upper_left_to_lower_right)
+            .chain(vertical_upper_left_to_lower_right)
+            .chain(horizontal_upper_right_to_lower_left)
+            .chain(vertical_upper_right_to_lower_left)
     }
 }
 
