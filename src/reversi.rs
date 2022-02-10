@@ -21,7 +21,7 @@
 //! # }
 //! ```
 
-use crate::std_lib::{Infallible, Ordering};
+use crate::std_lib::{iter, Infallible, Ordering};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -272,12 +272,12 @@ impl Reversi {
         col: usize,
         dir: Direction,
     ) -> impl Iterator<Item = (usize, usize)> {
-        itertools::iterate((row, col), move |(row, col)| {
+        iter::successors(Some((row, col)), move |(row, col)| {
             let (offset_row, offset_col) = dir.as_offset();
-            (
+            Some((
                 (*row as i8 + offset_row) as usize,
                 (*col as i8 + offset_col) as usize,
-            )
+            ))
         })
         .take_while(|(row, col)| *row < 8 && *col < 8)
     }

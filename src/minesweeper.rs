@@ -18,7 +18,7 @@
 //! # }
 //! ```
 
-use crate::std_lib::{Vec, VecDeque};
+use crate::std_lib::{iter, Vec, VecDeque};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -99,11 +99,9 @@ impl Minesweeper {
             return Err(MinesweeperError::TooManyMines);
         }
 
-        let board = itertools::repeat_n(Cell::new(true), mines)
-            .chain(itertools::repeat_n(
-                Cell::new(false),
-                height * width - mines,
-            ))
+        let board = iter::repeat(Cell::new(true))
+            .take(mines)
+            .chain(iter::repeat(Cell::new(false)).take(height * width - mines))
             .collect();
 
         let mut minesweeper = Self {
