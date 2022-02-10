@@ -5,19 +5,19 @@ A Rust library provides abstractions for several classic tiny games.
 [![Documentation](https://img.shields.io/badge/docs-release-brightgreen.svg?style=flat)](https://docs.rs/gamie)
 [![License](https://img.shields.io/crates/l/gamie.svg?style=flat)](https://github.com/EAimTY/gamie/blob/master/LICENSE)
 
-gamie aims to provide simple yet adequate abstractions for several classic tiny games.
+gamie provides simple yet adequate abstractions for several classic tiny games.
 
-gamie is quite lightweight, only came with a few dependencies, it can be easily integrated into your projects.
+gamie only came with a few dependencies, it can be easily integrated into your projects.
 
 ## Usage
-To use gamie, you should enable modules you need in `Cargo.toml`. For example `tictactoe`:
+To use gamie, you should enable modules in `Cargo.toml`. For example `tictactoe`:
 
 ```toml
 [dependencies]
 gamie = { version = "*", features = ["tictactoe"] }
 ```
 
-Now you can use the `tictactoe`:
+Now you can use the `TicTacToe` game abstraction:
 
 ```rust
 use gamie::tictactoe::{TicTacToe, Player as TicTacToePlayer, GameState as TicTacToeGameState};
@@ -33,7 +33,7 @@ game.place(TicTacToePlayer::Player0, 2, 1).unwrap();
 game.place(TicTacToePlayer::Player1, 0, 1).unwrap();
 game.place(TicTacToePlayer::Player0, 2, 2).unwrap();
 assert!(game.is_ended());
-assert_eq!(game.state(), &TicTacToeGameState::Tie);
+assert_eq!(game.status(), &TicTacToeGameState::Tie);
 ```
 
 Check the [docs](https://docs.rs/gamie) for further information.
@@ -42,12 +42,13 @@ Check the [docs](https://docs.rs/gamie) for further information.
 Currently, the following modules are available:
 
 - [connect_four](https://docs.rs/gamie/*/gamie/connect_four)
+- [gomoku](https://docs.rs/gamie/*/gamie/gomoku)
 - [minesweeper](https://docs.rs/gamie/*/gamie/minesweeper)
 - [reversi](https://docs.rs/gamie/*/gamie/reversi)
 - [tictactoe](https://docs.rs/gamie/*/gamie/tictactoe)
 
 ## Serialize / Deserialize
-Bring in the `serde` feature to enable serialization and deserialization.
+Bring in the `serde` feature to enable serialization and deserialization for structs
 
 ```toml
 [dependencies]
