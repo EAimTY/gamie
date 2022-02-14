@@ -179,7 +179,8 @@ impl ConnectFour {
                 } else {
                     count += 1;
                     if count == 4 && cell.is_some() {
-                        self.status = Status::Win(cell.unwrap());
+                        let winner = unsafe { cell.unwrap_unchecked() };
+                        self.status = Status::Win(winner);
                         return;
                     }
                 }

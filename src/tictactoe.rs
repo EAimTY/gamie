@@ -133,7 +133,8 @@ impl TicTacToe {
                 && self.board[row][0] == self.board[row][1]
                 && self.board[row][1] == self.board[row][2]
             {
-                self.status = Status::Win(self.board[row][0].unwrap());
+                let winner = unsafe { self.board[row][0].unwrap_unchecked() };
+                self.status = Status::Win(winner);
                 return;
             }
         }
@@ -143,7 +144,8 @@ impl TicTacToe {
                 && self.board[0][col] == self.board[1][col]
                 && self.board[1][col] == self.board[2][col]
             {
-                self.status = Status::Win(self.board[0][col].unwrap());
+                let winner = unsafe { self.board[0][col].unwrap_unchecked() };
+                self.status = Status::Win(winner);
                 return;
             }
         }
@@ -152,7 +154,8 @@ impl TicTacToe {
             && ((self.board[0][0] == self.board[1][1] && self.board[1][1] == self.board[2][2])
                 || (self.board[0][2] == self.board[1][1] && self.board[1][1] == self.board[2][0]))
         {
-            self.status = Status::Win(self.board[1][1].unwrap());
+            let winner = unsafe { self.board[1][1].unwrap_unchecked() };
+            self.status = Status::Win(winner);
             return;
         }
 

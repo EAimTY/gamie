@@ -135,7 +135,8 @@ impl Gomoku {
                 } else {
                     count += 1;
                     if count == 5 && cell.is_some() {
-                        self.status = Status::Win(cell.unwrap());
+                        let winner = unsafe { cell.unwrap_unchecked() };
+                        self.status = Status::Win(winner);
                         return;
                     }
                 }
