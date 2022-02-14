@@ -30,7 +30,7 @@ use snafu::Snafu;
 pub struct ConnectFour {
     board: [Column; 7],
     next: Player,
-    status: GameState,
+    status: Status,
 }
 
 /// The column of the game board.
@@ -98,7 +98,7 @@ impl Player {
 /// Game status
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub enum GameState {
+pub enum Status {
     Win(Player),
     Tie,
     InProgress,
@@ -110,38 +110,14 @@ impl ConnectFour {
         Ok(Self {
             board: Default::default(),
             next: Player::Player0,
-            status: GameState::InProgress,
+            status: Status::InProgress,
         })
     }
 
     /// Get a cell reference from the game board
     /// Panic when target position out of bounds
     pub fn get(&self, row: usize, col: usize) -> &Option<Player> {
-        &self.board[5 - row][col]
-    }
-
-    /// Check if the game was end
-    pub fn is_ended(&self) -> bool {
-        self.status != GameState::InProgress
-    }
-
-    /// Get the winner of the game. Return `None` when the game is tied or not end yet
-    pub fn winner(&self) -> Option<Player> {
-        if let GameState::Win(player) = self.status {
-            Some(player)
-        } else {
-            None
-        }
-    }
-
-    /// Get the game status
-    pub fn status(&self) -> &GameState {
-        &self.status
-    }
-
-    /// Get the next player
-    pub fn get_next_player(&self) -> Player {
-        self.next
+        &self.board[col][5 - row]
     }
 
     /// Put a piece into the game board
@@ -162,12 +138,36 @@ impl ConnectFour {
         self.board[col].push(player);
         self.next = self.next.other();
 
-        self.check_state();
+        self.check_game_status();
 
         Ok(())
     }
 
-    fn check_state(&mut self) {
+    /// Check if the game was end
+    pub fn is_ended(&self) -> bool {
+        self.status != Status::InProgress
+    }
+
+    /// Get the next player
+    pub fn get_next_player(&self) -> Player {
+        self.next
+    }
+
+    /// Get the game status
+    pub fn get_game_status(&self) -> &Status {
+        &self.status
+    }
+
+    /// Get the winner of the game. Return `None` when the game is tied or not end yet
+    pub fn get_winner(&self) -> Option<Player> {
+        if let Status::Win(player) = self.status {
+            Some(player)
+        } else {
+            None
+        }
+    }
+
+    fn check_game_status(&mut self) {
         for connectable in Self::get_connectable() {
             let mut last = None;
             let mut count = 0u8;
@@ -179,7 +179,7 @@ impl ConnectFour {
                 } else {
                     count += 1;
                     if count == 4 && cell.is_some() {
-                        self.status = GameState::Win(cell.unwrap());
+                        self.status = Status::Win(cell.unwrap());
                         return;
                     }
                 }
@@ -187,7 +187,7 @@ impl ConnectFour {
         }
 
         if (0..7).all(|col| self.board[col][5].is_some()) {
-            self.status = GameState::Tie;
+            self.status = Status::Tie;
         }
     }
 
@@ -274,6 +274,6 @@ mod tests {
         game.put(Player::Player0, 3).unwrap();
         game.put(Player::Player1, 5).unwrap();
         game.put(Player::Player0, 0).unwrap();
-        assert_eq!(Some(Player::Player0), game.winner());
+        assert_eq!(Some(Player::Player0), game.get_winner());
     }
 }

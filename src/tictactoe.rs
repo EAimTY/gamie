@@ -15,7 +15,7 @@
 //!
 //! // ...
 //!
-//! println!("{:?}", game.status());
+//! println!("{:?}", game.get_game_status());
 //! # }
 //! ```
 
@@ -34,7 +34,7 @@ use snafu::Snafu;
 pub struct TicTacToe {
     board: [[Option<Player>; 3]; 3],
     next: Player,
-    status: GameState,
+    status: Status,
 }
 
 /// Players
@@ -58,7 +58,7 @@ impl Player {
 /// Game status
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub enum GameState {
+pub enum Status {
     Win(Player),
     Tie,
     InProgress,
@@ -70,7 +70,7 @@ impl TicTacToe {
         Ok(Self {
             board: [[None; 3]; 3],
             next: Player::Player0,
-            status: GameState::InProgress,
+            status: Status::InProgress,
         })
     }
 
@@ -78,30 +78,6 @@ impl TicTacToe {
     /// Panic when target position out of bounds
     pub fn get(&self, row: usize, col: usize) -> &Option<Player> {
         &self.board[row][col]
-    }
-
-    /// Check if the game was end
-    pub fn is_ended(&self) -> bool {
-        self.status != GameState::InProgress
-    }
-
-    /// Get the winner of the game. Return `None` when the game is tied or not end yet
-    pub fn winner(&self) -> Option<Player> {
-        if let GameState::Win(player) = self.status {
-            Some(player)
-        } else {
-            None
-        }
-    }
-
-    /// Get the game status
-    pub fn status(&self) -> &GameState {
-        &self.status
-    }
-
-    /// Get the next player
-    pub fn get_next_player(&self) -> Player {
-        self.next
     }
 
     /// Place a piece on the board
@@ -122,18 +98,42 @@ impl TicTacToe {
         self.board[row][col] = Some(player);
         self.next = self.next.other();
 
-        self.check_state();
+        self.check_game_status();
 
         Ok(())
     }
 
-    fn check_state(&mut self) {
+    /// Check if the game was end
+    pub fn is_ended(&self) -> bool {
+        self.status != Status::InProgress
+    }
+
+    /// Get the next player
+    pub fn get_next_player(&self) -> Player {
+        self.next
+    }
+
+    /// Get the game status
+    pub fn get_game_status(&self) -> &Status {
+        &self.status
+    }
+
+    /// Get the winner of the game. Return `None` when the game is tied or not end yet
+    pub fn get_winner(&self) -> Option<Player> {
+        if let Status::Win(player) = self.status {
+            Some(player)
+        } else {
+            None
+        }
+    }
+
+    fn check_game_status(&mut self) {
         for row in 0..3 {
             if self.board[row][0].is_some()
                 && self.board[row][0] == self.board[row][1]
                 && self.board[row][1] == self.board[row][2]
             {
-                self.status = GameState::Win(self.board[row][0].unwrap());
+                self.status = Status::Win(self.board[row][0].unwrap());
                 return;
             }
         }
@@ -143,31 +143,23 @@ impl TicTacToe {
                 && self.board[0][col] == self.board[1][col]
                 && self.board[1][col] == self.board[2][col]
             {
-                self.status = GameState::Win(self.board[0][col].unwrap());
+                self.status = Status::Win(self.board[0][col].unwrap());
                 return;
             }
         }
 
-        if self.board[0][0].is_some()
-            && self.board[0][0] == self.board[1][1]
-            && self.board[1][1] == self.board[2][2]
+        if self.board[1][1].is_some()
+            && ((self.board[0][0] == self.board[1][1] && self.board[1][1] == self.board[2][2])
+                || (self.board[0][2] == self.board[1][1] && self.board[1][1] == self.board[2][0]))
         {
-            self.status = GameState::Win(self.board[0][0].unwrap());
-            return;
-        }
-
-        if self.board[0][0].is_some()
-            && self.board[0][2] == self.board[1][1]
-            && self.board[1][1] == self.board[2][0]
-        {
-            self.status = GameState::Win(self.board[0][2].unwrap());
+            self.status = Status::Win(self.board[1][1].unwrap());
             return;
         }
 
         self.status = if self.board.iter().flatten().all(|p| p.is_some()) {
-            GameState::Tie
+            Status::Tie
         } else {
-            GameState::InProgress
+            Status::InProgress
         };
     }
 }
@@ -215,7 +207,7 @@ mod tests {
 
         assert_eq!(game.place(Player::Player0, 2, 2), Ok(()));
 
-        assert_eq!(game.status(), &GameState::InProgress);
+        assert_eq!(game.get_game_status(), &Status::InProgress);
 
         assert_eq!(game.place(Player::Player1, 2, 0), Ok(()));
 
@@ -223,13 +215,13 @@ mod tests {
 
         assert!(game.is_ended());
 
-        assert_eq!(game.winner(), Some(Player::Player0));
+        assert_eq!(game.get_winner(), Some(Player::Player0));
 
         assert_eq!(
             game.place(Player::Player0, 0, 2),
             Err(TicTacToeError::GameEnded)
         );
 
-        assert_eq!(game.winner(), Some(Player::Player0));
+        assert_eq!(game.get_winner(), Some(Player::Player0));
     }
 }

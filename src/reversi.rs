@@ -36,7 +36,7 @@ use snafu::Snafu;
 pub struct Reversi {
     board: [[Option<Player>; 8]; 8],
     next: Player,
-    status: GameState,
+    status: Status,
 }
 
 /// Players
@@ -60,7 +60,7 @@ impl Player {
 /// Game status
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub enum GameState {
+pub enum Status {
     Win(Player),
     Tie,
     InProgress,
@@ -78,7 +78,7 @@ impl Reversi {
         Ok(Self {
             board,
             next: Player::Player0,
-            status: GameState::InProgress,
+            status: Status::InProgress,
         })
     }
 
@@ -88,34 +88,10 @@ impl Reversi {
         &self.board[row][col]
     }
 
-    /// Check if the game was end
-    pub fn is_ended(&self) -> bool {
-        self.status != GameState::InProgress
-    }
-
-    /// Get the winner of the game. Return `None` when the game is tied or not end yet
-    pub fn winner(&self) -> Option<Player> {
-        if let GameState::Win(player) = self.status {
-            Some(player)
-        } else {
-            None
-        }
-    }
-
-    /// Get the game status
-    pub fn status(&self) -> &GameState {
-        &self.status
-    }
-
-    /// Get the next player
-    pub fn get_next_player(&self) -> Player {
-        self.next
-    }
-
     /// Place a piece on the board
     /// Panic when target position out of bounds
     pub fn place(&mut self, player: Player, row: usize, col: usize) -> Result<(), ReversiError> {
-        self.simple_check_position_validity(row, col, player)?;
+        self.check_position_validity(row, col, player)?;
 
         let mut flipped = false;
 
@@ -135,7 +111,7 @@ impl Reversi {
                 self.next = player;
 
                 if !self.can_player_move(player) {
-                    self.check_state();
+                    self.check_game_status();
                 }
             }
 
@@ -145,15 +121,39 @@ impl Reversi {
         }
     }
 
+    /// Check if the game was end
+    pub fn is_ended(&self) -> bool {
+        self.status != Status::InProgress
+    }
+
+    /// Get the next player
+    pub fn get_next_player(&self) -> Player {
+        self.next
+    }
+
+    /// Get the game status
+    pub fn get_game_status(&self) -> &Status {
+        &self.status
+    }
+
+    /// Get the winner of the game. Return `None` when the game is tied or not end yet
+    pub fn get_winner(&self) -> Option<Player> {
+        if let Status::Win(player) = self.status {
+            Some(player)
+        } else {
+            None
+        }
+    }
+
     /// Check if a position is valid for placing piece
     /// Panic when target position out of bounds
-    pub fn check_position_validity(
+    pub fn is_valid_move(
         &self,
+        player: Player,
         row: usize,
         col: usize,
-        player: Player,
     ) -> Result<(), ReversiError> {
-        self.simple_check_position_validity(row, col, player)?;
+        self.check_position_validity(row, col, player)?;
 
         if Direction::iter()
             .map(|dir| self.check_occupied_line_in_direction(row, col, dir, player))
@@ -165,7 +165,7 @@ impl Reversi {
         }
     }
 
-    fn simple_check_position_validity(
+    fn check_position_validity(
         &self,
         row: usize,
         col: usize,
@@ -200,7 +200,7 @@ impl Reversi {
         false
     }
 
-    fn check_state(&mut self) {
+    fn check_game_status(&mut self) {
         let mut black_count = 0;
         let mut white_count = 0;
 
@@ -212,9 +212,9 @@ impl Reversi {
         }
 
         self.status = match black_count.cmp(&white_count) {
-            Ordering::Less => GameState::Win(Player::Player1),
-            Ordering::Equal => GameState::Tie,
-            Ordering::Greater => GameState::Win(Player::Player0),
+            Ordering::Less => Status::Win(Player::Player1),
+            Ordering::Equal => Status::Tie,
+            Ordering::Greater => Status::Win(Player::Player0),
         };
     }
 

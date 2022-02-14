@@ -1,4 +1,4 @@
-//! Gomoku game
+//! Gomoku
 //!
 //! Check struct [`Gomoku`](https://docs.rs/gamie/*/gamie/gomoku/struct.Gomoku.html) for more information
 //!
@@ -30,7 +30,7 @@ use snafu::Snafu;
 pub struct Gomoku {
     board: [[Option<Player>; 15]; 15],
     next: Player,
-    status: GameState,
+    status: Status,
 }
 
 /// Players
@@ -54,7 +54,7 @@ impl Player {
 /// Game status
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub enum GameState {
+pub enum Status {
     Win(Player),
     Tie,
     InProgress,
@@ -66,7 +66,7 @@ impl Gomoku {
         Ok(Self {
             board: [[None; 15]; 15],
             next: Player::Player0,
-            status: GameState::InProgress,
+            status: Status::InProgress,
         })
     }
 
@@ -74,30 +74,6 @@ impl Gomoku {
     /// Panic when target position out of bounds
     pub fn get(&self, row: usize, col: usize) -> &Option<Player> {
         &self.board[row][col]
-    }
-
-    /// Check if the game was end
-    pub fn is_ended(&self) -> bool {
-        self.status != GameState::InProgress
-    }
-
-    /// Get the winner of the game. Return `None` when the game is tied or not end yet
-    pub fn winner(&self) -> Option<Player> {
-        if let GameState::Win(player) = self.status {
-            Some(player)
-        } else {
-            None
-        }
-    }
-
-    /// Get the game status
-    pub fn status(&self) -> &GameState {
-        &self.status
-    }
-
-    /// Get the next player
-    pub fn get_next_player(&self) -> Player {
-        self.next
     }
 
     /// Place a piece on the board
@@ -118,12 +94,36 @@ impl Gomoku {
         self.board[row][col] = Some(player);
         self.next = self.next.other();
 
-        self.check_state();
+        self.check_game_status();
 
         Ok(())
     }
 
-    fn check_state(&mut self) {
+    /// Check if the game was end
+    pub fn is_ended(&self) -> bool {
+        self.status != Status::InProgress
+    }
+
+    /// Get the next player
+    pub fn get_next_player(&self) -> Player {
+        self.next
+    }
+
+    /// Get the winner of the game. Return `None` when the game is tied or not end yet
+    pub fn get_winner(&self) -> Option<Player> {
+        if let Status::Win(player) = self.status {
+            Some(player)
+        } else {
+            None
+        }
+    }
+
+    /// Get the game status
+    pub fn get_game_status(&self) -> &Status {
+        &self.status
+    }
+
+    fn check_game_status(&mut self) {
         for connectable in Self::get_connectable() {
             let mut last = None;
             let mut count = 0u8;
@@ -135,7 +135,7 @@ impl Gomoku {
                 } else {
                     count += 1;
                     if count == 5 && cell.is_some() {
-                        self.status = GameState::Win(cell.unwrap());
+                        self.status = Status::Win(cell.unwrap());
                         return;
                     }
                 }
@@ -143,7 +143,7 @@ impl Gomoku {
         }
 
         if self.board.iter().flatten().all(|cell| cell.is_some()) {
-            self.status = GameState::Tie;
+            self.status = Status::Tie;
         }
     }
 

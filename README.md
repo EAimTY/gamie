@@ -20,7 +20,7 @@ gamie = { version = "*", features = ["tictactoe"] }
 Now you can use the `TicTacToe` game abstraction:
 
 ```rust
-use gamie::tictactoe::{TicTacToe, Player as TicTacToePlayer, GameState as TicTacToeGameState};
+use gamie::tictactoe::{TicTacToe, Player as TicTacToePlayer, Status as TicTacToeGameStatus};
 
 let mut game = TicTacToe::new().unwrap();
 game.place(TicTacToePlayer::Player0, 1, 1).unwrap();
@@ -33,7 +33,7 @@ game.place(TicTacToePlayer::Player0, 2, 1).unwrap();
 game.place(TicTacToePlayer::Player1, 0, 1).unwrap();
 game.place(TicTacToePlayer::Player0, 2, 2).unwrap();
 assert!(game.is_ended());
-assert_eq!(game.status(), &TicTacToeGameState::Tie);
+assert_eq!(game.get_game_status(), &TicTacToeGameStatus::Tie);
 ```
 
 Check the [docs](https://docs.rs/gamie) for further information.
