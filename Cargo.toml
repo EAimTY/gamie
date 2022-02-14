@@ -1,6 +1,6 @@
 [package]
 name = "gamie"
-version = "0.7.0"
+version = "0.8.0"
 authors = ["EAimTY <ea.imty@gmail.com>"]
 description = "A Rust library provides abstractions for several classic tiny games"
 categories = ["games", "game-development", "no-std"]
