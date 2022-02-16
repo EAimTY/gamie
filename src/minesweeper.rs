@@ -82,7 +82,7 @@ impl<R: Rng> Minesweeper<R> {
     ///
     /// A random number generator is required for randomizing mine positions
     ///
-    /// Return `Err(MinesweeperError::TooManyMines)` if `height * width < mines`
+    /// Return `Err(MinesweeperError::TooManyMines)` if `(height - 1) * (width - 1) < mines`
     ///
     /// # Examples
     /// ```rust
@@ -99,7 +99,7 @@ impl<R: Rng> Minesweeper<R> {
         mines: usize,
         rng: R,
     ) -> Result<Self, MinesweeperError> {
-        if height * width < mines {
+        if (height - 1) * (width - 1) < mines {
             return Err(MinesweeperError::TooManyMines);
         }
 
