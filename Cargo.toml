@@ -1,6 +1,6 @@
 [package]
 name = "gamie"
-version = "0.9.0"
+version = "0.9.1"
 authors = ["EAimTY <ea.imty@gmail.com>"]
 description = "A Rust library provides abstractions for several classic tiny games"
 categories = ["games", "game-development", "no-std"]
@@ -20,12 +20,13 @@ reversi = []
 tictactoe = []
 
 [dependencies]
+bincode = { version = "2.0.0-rc.3", default-features = false, features = ["alloc", "derive"], optional = true }
 rand = { version = "0.8.5", default-features = false, optional = true }
 serde = { version = "1.0.197", default-features = false, features = ["alloc", "derive"], optional = true }
 snafu = { version = "0.8.2", default-features = false }
 
 [dev-dependencies]
-gamie = { path = ".", features = ["std", "serde", "connect_four", "gomoku", "minesweeper", "reversi", "tictactoe"] }
+gamie = { path = ".", features = ["std", "bincode", "serde", "connect_four", "gomoku", "minesweeper", "reversi", "tictactoe"] }
 rand = { version = "0.8.5", default-features = false, features = ["std", "std_rng"] }
 
 [package.metadata.docs.rs]

@@ -1,4 +1,5 @@
 # gamie
+
 A Rust library provides abstractions for several classic tiny games.
 
 [![Version](https://img.shields.io/crates/v/gamie.svg?style=flat)](https://crates.io/crates/gamie)
@@ -10,6 +11,7 @@ gamie provides simple yet adequate abstractions for several classic tiny games.
 gamie only came with a few dependencies, it can be easily integrated into your projects.
 
 ## Usage
+
 To use gamie, you should enable modules in `Cargo.toml`. For example `tictactoe`:
 
 ```toml
@@ -39,6 +41,7 @@ assert_eq!(game.get_game_status(), &TicTacToeGameStatus::Tie);
 Check the [docs](https://docs.rs/gamie) for further information.
 
 ## Modules
+
 Currently, the following modules are available:
 
 - [connect_four](https://docs.rs/gamie/*/gamie/connect_four)
@@ -48,14 +51,12 @@ Currently, the following modules are available:
 - [tictactoe](https://docs.rs/gamie/*/gamie/tictactoe)
 
 ## Serialize / Deserialize
-Bring in the `serde` feature to enable serialization and deserialization for structs
 
-```toml
-[dependencies]
-gamie = { version = "0.9.0", features = ["serde", "tictactoe"] }
-```
+Bring in the `serde` feature to enable serialization and deserialization for structs
+Opt in the `bincode` feature to enable encoding and decoding with [bincode](https://github.com/bincode-org/bincode)
 
 ## no_std
+
 This crate runs flawlessly on bare metal.
 To remove the Rust standard library dependency, opt out the `std` feature by disabling `default-features` in `Cargo.toml`:
 
@@ -65,4 +66,5 @@ gamie = { version = "0.9.0", default-features = false, features = ["tictactoe"] 
 ```
 
 ## License
+
 GNU General Public License v3.0

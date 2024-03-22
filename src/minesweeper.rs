@@ -31,6 +31,9 @@ use snafu::Snafu;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+#[cfg(feature = "bincode")]
+use bincode::{Decode, Encode};
+
 /// Minesweeper
 ///
 /// To avoid unessecary memory allocation, the game board is stored in a single `Vec` rather than a nested one.
@@ -38,6 +41,7 @@ use serde::{Deserialize, Serialize};
 /// Passing an invalid position to a method will cause panic. Check the target position validity first when dealing with user input
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "bincode", derive(Decode, Encode))]
 pub struct Minesweeper<R> {
     board: Vec<Cell>,
     height: usize,
@@ -52,6 +56,7 @@ pub struct Minesweeper<R> {
 /// The cell in the board.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "bincode", derive(Decode, Encode))]
 pub struct Cell {
     pub is_mine: bool,
     pub mine_adjacent: usize,
@@ -73,6 +78,7 @@ impl Cell {
 /// Game status
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "bincode", derive(Decode, Encode))]
 pub enum Status {
     Win,
     Exploded(Vec<(usize, usize)>),
