@@ -15,12 +15,14 @@
 //! # }
 //! ```
 
-use crate::std_lib::{iter, Box, Infallible};
+extern crate alloc;
+
+use alloc::boxed::Box;
+use core::{convert::Infallible, iter};
+use snafu::Snafu;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-
-use snafu::Snafu;
 
 /// Gomoku
 ///

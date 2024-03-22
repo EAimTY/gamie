@@ -21,12 +21,11 @@
 //! # }
 //! ```
 
-use crate::std_lib::{iter, Infallible, Ordering};
+use core::{cmp::Ordering, convert::Infallible, iter};
+use snafu::Snafu;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-
-use snafu::Snafu;
 
 /// Reversi
 ///

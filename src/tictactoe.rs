@@ -19,12 +19,11 @@
 //! # }
 //! ```
 
-use crate::std_lib::Infallible;
+use core::convert::Infallible;
+use snafu::Snafu;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-
-use snafu::Snafu;
 
 /// Tic-Tac-Toe
 ///

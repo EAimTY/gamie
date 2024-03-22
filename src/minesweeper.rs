@@ -18,16 +18,18 @@
 //! # }
 //! ```
 
-use crate::std_lib::{iter, Vec, VecDeque};
+extern crate alloc;
 
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-
+use alloc::{collections::VecDeque, vec, vec::Vec};
+use core::iter;
 use rand::{
     distributions::{Distribution, Uniform},
     Rng,
 };
 use snafu::Snafu;
+
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 /// Minesweeper
 ///

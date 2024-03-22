@@ -15,12 +15,18 @@
 //! # }
 //! ```
 
-use crate::std_lib::{iter, Box, Index, IndexMut, Infallible};
+extern crate alloc;
+
+use alloc::boxed::Box;
+use core::{
+    convert::Infallible,
+    iter,
+    ops::{Index, IndexMut},
+};
+use snafu::Snafu;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-
-use snafu::Snafu;
 
 /// Connect Four
 ///

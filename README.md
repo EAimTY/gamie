@@ -14,7 +14,7 @@ To use gamie, you should enable modules in `Cargo.toml`. For example `tictactoe`
 
 ```toml
 [dependencies]
-gamie = { version = "*", features = ["tictactoe"] }
+gamie = { version = "0.9.0", features = ["std", "tictactoe"] }
 ```
 
 Now you can use the `TicTacToe` game abstraction:
@@ -52,7 +52,7 @@ Bring in the `serde` feature to enable serialization and deserialization for str
 
 ```toml
 [dependencies]
-gamie = { version = "*", features = ["serde", "tictactoe"] }
+gamie = { version = "0.9.0", features = ["serde", "tictactoe"] }
 ```
 
 ## no_std
@@ -61,7 +61,7 @@ To remove the Rust standard library dependency, opt out the `std` feature by dis
 
 ```toml
 [dependencies]
-gamie = { version = "*", features = ["tictactoe"], default-features = false }
+gamie = { version = "0.9.0", default-features = false, features = ["tictactoe"] }
 ```
 
 ## License
