@@ -84,9 +84,13 @@ impl ConnectFour {
     /// Get a piece at a position
     ///
     /// Panic if the target position is out of bounds
-    pub fn get(&self, row: usize, col: usize) -> Option<Player> {
+    pub const fn get(&self, row: usize, col: usize) -> Option<Player> {
         let column = &self.columns[col];
-        (row >= BOARD_HEIGHT - column.filled).then_some(column.cells[row])
+        if row >= BOARD_HEIGHT - column.filled {
+            Some(column.cells[row])
+        } else {
+            None
+        }
     }
 
     /// Put a piece

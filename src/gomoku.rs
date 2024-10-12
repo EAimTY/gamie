@@ -45,7 +45,7 @@ pub enum Status {
     Win(Player),
 }
 
-/// Errors that can occur when placing a piece on the board
+/// Errors that can occur when placing a piece onto the board
 #[derive(Debug, Eq, PartialEq, Snafu)]
 pub enum GomokuError {
     #[snafu(display("position occupied"))]
@@ -74,7 +74,7 @@ impl Gomoku {
     /// Get a piece at a position
     ///
     /// Panic if the target position is out of bounds
-    pub fn get(&self, row: usize, col: usize) -> Option<Player> {
+    pub const fn get(&self, row: usize, col: usize) -> Option<Player> {
         self.board[row][col]
     }
 
