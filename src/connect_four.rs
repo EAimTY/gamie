@@ -1,259 +1,206 @@
 //! Connect Four
 //!
-//! Check struct [`ConnectFour`](https://docs.rs/gamie/*/gamie/connect_four/struct.ConnectFour.html) for more information
-//!
-//! # Examples
-//!
-//! ```rust
-//! # fn connect_four() {
-//! use gamie::connect_four::{ConnectFour, Player as ConnectFourPlayer};
-//!
-//! let mut game = ConnectFour::new().unwrap();
-//! game.put(ConnectFourPlayer::Player0, 3).unwrap();
-//! game.put(ConnectFourPlayer::Player1, 2).unwrap();
-//! // ...
-//! # }
-//! ```
+//! Check struct [`ConnectFour`] for more information
 
-extern crate alloc;
-
-use alloc::boxed::Box;
-use core::{
-    convert::Infallible,
-    iter,
-    ops::{Index, IndexMut},
-};
+use core::convert::Infallible;
 use snafu::Snafu;
 
 /// Connect Four
 ///
-/// Passing an invalid position to a method will cause panic. Check the target position validity first when dealing with user input
+/// # Examples
+///
+/// ```rust
+/// # use gamie::connect_four::ConnectFour;
+/// let mut game = ConnectFour::new().unwrap();
+/// game.put(3).unwrap();
+/// game.put(2).unwrap();
+/// // ...
+/// ```
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ConnectFour {
-    board: [Column; 7],
+    columns: [Column; 7],
+    move_count: usize,
     next: Player,
     status: Status,
 }
 
-/// The column of the game board.
-///
-/// This is a vector-like struct. Inner elements can be accessed by using index
-#[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-struct Column {
-    column: [Option<Player>; 6],
-    occupied: usize,
-}
-
-impl Column {
-    fn is_full(&self) -> bool {
-        self.occupied == 6
-    }
-
-    fn push(&mut self, player: Player) {
-        self.column[self.occupied] = Some(player);
-        self.occupied += 1;
-    }
-}
-
-impl Default for Column {
-    fn default() -> Self {
-        Self {
-            column: [None; 6],
-            occupied: 0,
-        }
-    }
-}
-
-impl Index<usize> for Column {
-    type Output = Option<Player>;
-
-    fn index(&self, index: usize) -> &Self::Output {
-        &self.column[index]
-    }
-}
-
-impl IndexMut<usize> for Column {
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        &mut self.column[index]
-    }
-}
-
 /// Players
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Player {
     Player0,
     Player1,
 }
 
-impl Player {
-    /// Get the opposite player
-    pub fn other(self) -> Self {
-        match self {
-            Player::Player0 => Player::Player1,
-            Player::Player1 => Player::Player0,
-        }
-    }
-}
-
 /// Game status
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Status {
+    Ongoing,
+    Draw,
     Win(Player),
-    Tie,
-    InProgress,
-}
-
-impl ConnectFour {
-    /// Create a new Connect Four game
-    pub fn new() -> Result<Self, Infallible> {
-        Ok(Self {
-            board: Default::default(),
-            next: Player::Player0,
-            status: Status::InProgress,
-        })
-    }
-
-    /// Get a cell reference from the game board
-    /// Panic when target position out of bounds
-    pub fn get(&self, row: usize, col: usize) -> &Option<Player> {
-        &self.board[col][5 - row]
-    }
-
-    /// Put a piece into the game board
-    /// Panic when target position out of bounds
-    pub fn put(&mut self, player: Player, col: usize) -> Result<(), ConnectFourError> {
-        if self.is_ended() {
-            return Err(ConnectFourError::GameEnded);
-        }
-
-        if player != self.next {
-            return Err(ConnectFourError::WrongPlayer);
-        }
-
-        if self.board[col].is_full() {
-            return Err(ConnectFourError::ColumnFilled);
-        }
-
-        self.board[col].push(player);
-        self.next = self.next.other();
-
-        self.check_game_status();
-
-        Ok(())
-    }
-
-    /// Check if the game was end
-    pub fn is_ended(&self) -> bool {
-        self.status != Status::InProgress
-    }
-
-    /// Get the next player
-    pub fn get_next_player(&self) -> Player {
-        self.next
-    }
-
-    /// Get the game status
-    pub fn get_game_status(&self) -> &Status {
-        &self.status
-    }
-
-    /// Get the winner of the game. Return `None` when the game is tied or not end yet
-    pub fn get_winner(&self) -> Option<Player> {
-        if let Status::Win(player) = self.status {
-            Some(player)
-        } else {
-            None
-        }
-    }
-
-    fn check_game_status(&mut self) {
-        for connectable in Self::get_connectable() {
-            let mut last = None;
-            let mut count = 0u8;
-
-            for cell in connectable.map(|(row, col)| self.board[col][row]) {
-                if cell != last {
-                    last = cell;
-                    count = 1;
-                } else {
-                    count += 1;
-                    if count == 4 && cell.is_some() {
-                        let winner = unsafe { cell.unwrap_unchecked() };
-                        self.status = Status::Win(winner);
-                        return;
-                    }
-                }
-            }
-        }
-
-        if (0..7).all(|col| self.board[col][5].is_some()) {
-            self.status = Status::Tie;
-        }
-    }
-
-    fn get_connectable() -> impl Iterator<Item = Box<dyn Iterator<Item = (usize, usize)>>> {
-        let horizontal = (0usize..6).map(move |row| {
-            Box::new((0usize..7).map(move |col| (row, col)))
-                as Box<dyn Iterator<Item = (usize, usize)>>
-        });
-
-        let vertical = (0usize..7).map(move |col| {
-            Box::new((0usize..6).map(move |row| (row, col)))
-                as Box<dyn Iterator<Item = (usize, usize)>>
-        });
-
-        let horizontal_upper_left_to_lower_right = (0usize..7).map(move |col| {
-            Box::new(
-                iter::successors(Some((0usize, col)), |(row, col)| Some((row + 1, col + 1)))
-                    .take((7 - col).min(6)),
-            ) as Box<dyn Iterator<Item = (usize, usize)>>
-        });
-
-        let vertical_upper_left_to_lower_right = (0usize..6).map(move |row| {
-            Box::new(
-                iter::successors(Some((row, 0usize)), |(row, col)| Some((row + 1, col + 1)))
-                    .take(6 - row),
-            ) as Box<dyn Iterator<Item = (usize, usize)>>
-        });
-
-        let horizontal_upper_right_to_lower_left = (0usize..7).map(move |col| {
-            Box::new(
-                iter::successors(Some((0usize, col)), |(row, col)| {
-                    col.checked_sub(1).map(|new_col| (row + 1, new_col))
-                })
-                .take((1 + col).min(6)),
-            ) as Box<dyn Iterator<Item = (usize, usize)>>
-        });
-
-        let vertical_upper_right_to_lower_left = (0usize..6).map(move |row| {
-            Box::new(
-                iter::successors(Some((row, 6usize)), |(row, col)| Some((row + 1, col - 1)))
-                    .take(6 - row),
-            ) as Box<dyn Iterator<Item = (usize, usize)>>
-        });
-
-        horizontal
-            .chain(vertical)
-            .chain(horizontal_upper_left_to_lower_right)
-            .chain(vertical_upper_left_to_lower_right)
-            .chain(horizontal_upper_right_to_lower_left)
-            .chain(vertical_upper_right_to_lower_left)
-    }
 }
 
 /// Errors that can occur when putting a piece into the board
 #[derive(Debug, Eq, PartialEq, Snafu)]
 pub enum ConnectFourError {
-    #[snafu(display("Wrong player"))]
-    WrongPlayer,
-    #[snafu(display("Filled Column"))]
+    #[snafu(display("column filled"))]
     ColumnFilled,
-    #[snafu(display("The game was already end"))]
+    #[snafu(display("game ended"))]
     GameEnded,
+}
+
+#[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+struct Column {
+    cells: [Player; 6],
+    filled: usize,
+}
+
+struct LastMove {
+    player: Player,
+    row: usize,
+    col: usize,
+}
+
+impl ConnectFour {
+    /// Create a new Connect Four game
+    pub const fn new() -> Result<Self, Infallible> {
+        Ok(Self {
+            columns: [Column {
+                cells: [Player::Player0; 6],
+                filled: 0,
+            }; 7],
+            move_count: 0,
+            next: Player::Player0,
+            status: Status::Ongoing,
+        })
+    }
+
+    /// Get a piece at a position
+    ///
+    /// Panic if the target position is out of bounds
+    pub fn get(&self, row: usize, col: usize) -> Option<Player> {
+        let column = &self.columns[col];
+        (row >= 6 - column.filled).then_some(column.cells[row])
+    }
+
+    /// Put a piece
+    ///
+    /// Panic if the target position is out of bounds
+    pub fn put(&mut self, col: usize) -> Result<(), ConnectFourError> {
+        if matches!(self.status, Status::Win(_) | Status::Draw) {
+            return Err(ConnectFourError::GameEnded);
+        }
+
+        if self.columns[col].filled == 6 {
+            return Err(ConnectFourError::ColumnFilled);
+        }
+
+        let column = &mut self.columns[col];
+
+        let row = 6 - 1 - column.filled;
+
+        column.cells[row] = self.next;
+        column.filled += 1;
+
+        let last_move = LastMove {
+            player: self.next,
+            row,
+            col,
+        };
+
+        self.move_count += 1;
+        self.next = self.next.other();
+
+        self.update_status(last_move);
+
+        Ok(())
+    }
+
+    /// Get the next player
+    pub fn next_player(&self) -> Player {
+        self.next
+    }
+
+    /// Get game status
+    pub fn status(&self) -> &Status {
+        &self.status
+    }
+
+    fn update_status(&mut self, last_move: LastMove) {
+        // to determine if the game is ended by the last move, 7 positions centered at the last move are checked on each direction
+
+        let checking_col_range = last_move.col.saturating_sub(3)..=(last_move.col + 3).min(7 - 1);
+        let checking_row_range = last_move.row.saturating_sub(3)..=(last_move.row + 3).min(6 - 1);
+        let mut continuous_player_pieces = 0;
+
+        // horizontal
+        for col in checking_col_range.clone() {
+            if self.get(last_move.row, col) == Some(last_move.player) {
+                continuous_player_pieces += 1;
+                if continuous_player_pieces == 4 {
+                    self.status = Status::Win(last_move.player);
+                    return;
+                }
+            }
+        }
+
+        // vertical
+        continuous_player_pieces = 0;
+
+        for row in checking_row_range.clone() {
+            if self.get(row, last_move.col) == Some(last_move.player) {
+                continuous_player_pieces += 1;
+                if continuous_player_pieces == 4 {
+                    self.status = Status::Win(last_move.player);
+                    return;
+                }
+            }
+        }
+
+        // top-left to bottom-right diagonal
+        continuous_player_pieces = 0;
+
+        for (row, col) in checking_row_range.clone().zip(checking_col_range.clone()) {
+            if self.get(row, col) == Some(last_move.player) {
+                continuous_player_pieces += 1;
+                if continuous_player_pieces == 4 {
+                    self.status = Status::Win(last_move.player);
+                    return;
+                }
+            }
+        }
+
+        // top-right to bottom-left diagonal
+        continuous_player_pieces = 0;
+
+        for (row, col) in checking_row_range.zip(checking_col_range.rev()) {
+            if self.get(row, col) == Some(last_move.player) {
+                continuous_player_pieces += 1;
+                if continuous_player_pieces == 4 {
+                    self.status = Status::Win(last_move.player);
+                    return;
+                }
+            }
+        }
+
+        // check draw
+        if self.move_count == 7 * 6 {
+            self.status = Status::Draw;
+        }
+    }
+}
+
+impl Player {
+    /// Get the other player
+    pub const fn other(self) -> Self {
+        match self {
+            Player::Player0 => Player::Player1,
+            Player::Player1 => Player::Player0,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -263,21 +210,23 @@ mod tests {
     #[test]
     fn test() {
         let mut game = ConnectFour::new().unwrap();
-        game.put(Player::Player0, 3).unwrap();
-        game.put(Player::Player1, 2).unwrap();
-        game.put(Player::Player0, 2).unwrap();
-        game.put(Player::Player1, 1).unwrap();
-        game.put(Player::Player0, 1).unwrap();
-        game.put(Player::Player1, 0).unwrap();
-        game.put(Player::Player0, 3).unwrap();
-        game.put(Player::Player1, 0).unwrap();
-        game.put(Player::Player0, 1).unwrap();
-        game.put(Player::Player1, 6).unwrap();
-        game.put(Player::Player0, 2).unwrap();
-        game.put(Player::Player1, 6).unwrap();
-        game.put(Player::Player0, 3).unwrap();
-        game.put(Player::Player1, 5).unwrap();
-        game.put(Player::Player0, 0).unwrap();
-        assert_eq!(Some(Player::Player0), game.get_winner());
+
+        game.put(3).unwrap();
+        game.put(2).unwrap();
+        game.put(2).unwrap();
+        game.put(1).unwrap();
+        game.put(1).unwrap();
+        game.put(0).unwrap();
+        game.put(3).unwrap();
+        game.put(0).unwrap();
+        game.put(1).unwrap();
+        game.put(6).unwrap();
+        game.put(2).unwrap();
+        game.put(6).unwrap();
+        game.put(3).unwrap();
+        game.put(5).unwrap();
+        game.put(0).unwrap();
+
+        assert_eq!(game.status(), &Status::Win(Player::Player0));
     }
 }
