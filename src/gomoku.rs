@@ -107,12 +107,12 @@ impl Gomoku {
     }
 
     /// Get the next player
-    pub fn next_player(&self) -> Player {
+    pub const fn next_player(&self) -> Player {
         self.next_player
     }
 
     /// Get game status
-    pub fn status(&self) -> &Status {
+    pub const fn status(&self) -> &Status {
         &self.status
     }
 
