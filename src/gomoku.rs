@@ -15,8 +15,8 @@ const BOARD_HEIGHT: usize = 15;
 /// ```rust
 /// # use gamie::gomoku::Gomoku;
 /// let mut game = Gomoku::new().unwrap();
-/// game.put(8).unwrap();
-/// game.put(7).unwrap();
+/// game.put(7, 8).unwrap();
+/// game.put(8, 7).unwrap();
 /// // ...
 /// ```
 #[derive(Clone, Debug)]
