@@ -24,11 +24,11 @@ const BOARD_HEIGHT: usize = 6;
 pub struct ConnectFour {
     columns: [Column; BOARD_WIDTH],
     move_count: usize,
-    next: Player,
+    next_player: Player,
     status: Status,
 }
 
-/// Players
+/// Player
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Player {
@@ -45,7 +45,7 @@ pub enum Status {
     Win(Player),
 }
 
-/// Errors that can occur when putting a piece into the board
+/// Errors that can occur when putting a piece onto the board
 #[derive(Debug, Eq, PartialEq, Snafu)]
 pub enum ConnectFourError {
     #[snafu(display("column filled"))]
@@ -76,7 +76,7 @@ impl ConnectFour {
                 filled: 0,
             }; BOARD_WIDTH],
             move_count: 0,
-            next: Player::Player0,
+            next_player: Player::Player0,
             status: Status::Ongoing,
         })
     }
@@ -105,17 +105,17 @@ impl ConnectFour {
 
         let row = BOARD_HEIGHT - 1 - column.filled;
 
-        column.cells[row] = self.next;
+        column.cells[row] = self.next_player;
         column.filled += 1;
 
         let last_move = LastMove {
-            player: self.next,
+            player: self.next_player,
             row,
             col,
         };
 
         self.move_count += 1;
-        self.next = self.next.other();
+        self.next_player = self.next_player.other();
 
         self.update_status(last_move);
 
@@ -124,7 +124,7 @@ impl ConnectFour {
 
     /// Get the next player
     pub fn next_player(&self) -> Player {
-        self.next
+        self.next_player
     }
 
     /// Get game status
@@ -135,10 +135,10 @@ impl ConnectFour {
     fn update_status(&mut self, last_move: LastMove) {
         // to determine if the game is ended by the last move, 7 positions centered at the last move are checked on each direction
 
-        let checking_col_range =
-            last_move.col.saturating_sub(3)..=(last_move.col + 3).min(BOARD_WIDTH - 1);
         let checking_row_range =
             last_move.row.saturating_sub(3)..=(last_move.row + 3).min(BOARD_HEIGHT - 1);
+        let checking_col_range =
+            last_move.col.saturating_sub(3)..=(last_move.col + 3).min(BOARD_WIDTH - 1);
         let mut continuous_player_pieces = 0;
 
         // horizontal
@@ -192,7 +192,7 @@ impl ConnectFour {
         }
 
         // check draw
-        if self.move_count == BOARD_WIDTH * BOARD_HEIGHT {
+        if self.move_count == BOARD_HEIGHT * BOARD_WIDTH {
             self.status = Status::Draw;
         }
     }
