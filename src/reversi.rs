@@ -24,18 +24,11 @@
 use core::{cmp::Ordering, convert::Infallible, iter};
 use snafu::Snafu;
 
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-
-#[cfg(feature = "bincode")]
-use bincode::{Decode, Encode};
-
 /// Reversi
 ///
 /// Passing an invalid position to a method will cause panic. Check the target position validity first when dealing with user input
 #[derive(Clone, Debug)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "bincode", derive(Decode, Encode))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Reversi {
     board: [[Option<Player>; 8]; 8],
     next: Player,
@@ -44,8 +37,7 @@ pub struct Reversi {
 
 /// Players
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "bincode", derive(Decode, Encode))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Player {
     Player0,
     Player1,
@@ -63,8 +55,7 @@ impl Player {
 
 /// Game status
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "bincode", derive(Decode, Encode))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Status {
     Win(Player),
     Tie,

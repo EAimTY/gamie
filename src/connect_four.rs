@@ -25,18 +25,11 @@ use core::{
 };
 use snafu::Snafu;
 
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-
-#[cfg(feature = "bincode")]
-use bincode::{Decode, Encode};
-
 /// Connect Four
 ///
 /// Passing an invalid position to a method will cause panic. Check the target position validity first when dealing with user input
 #[derive(Clone, Debug)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "bincode", derive(Decode, Encode))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ConnectFour {
     board: [Column; 7],
     next: Player,
@@ -47,8 +40,7 @@ pub struct ConnectFour {
 ///
 /// This is a vector-like struct. Inner elements can be accessed by using index
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "bincode", derive(Decode, Encode))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct Column {
     column: [Option<Player>; 6],
     occupied: usize,
@@ -90,8 +82,7 @@ impl IndexMut<usize> for Column {
 
 /// Players
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "bincode", derive(Decode, Encode))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Player {
     Player0,
     Player1,
@@ -109,8 +100,7 @@ impl Player {
 
 /// Game status
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "bincode", derive(Decode, Encode))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Status {
     Win(Player),
     Tie,
