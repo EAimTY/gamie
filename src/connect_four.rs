@@ -2,7 +2,10 @@
 //!
 //! Check struct [`ConnectFour`] for more information
 
-use core::convert::Infallible;
+use core::{
+    convert::Infallible,
+    fmt::{Debug, Formatter, Result as FmtResult},
+};
 use snafu::Snafu;
 
 const BOARD_WIDTH: usize = 7;
@@ -19,7 +22,7 @@ const BOARD_HEIGHT: usize = 6;
 /// game.put(2).unwrap();
 /// // ...
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ConnectFour {
     columns: [Column; BOARD_WIDTH],
@@ -54,7 +57,11 @@ pub enum ConnectFourError {
     GameEnded,
 }
 
-#[derive(Clone, Copy, Debug)]
+/// Column in the board
+///
+/// Since pieces are placed from the bottom, the column is represented as a grow-only stack
+/// `Option<Player>` is not needed since we are tracking the number of filled cells
+#[derive(Clone, Copy)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct Column {
     cells: [Player; BOARD_HEIGHT],
@@ -86,6 +93,7 @@ impl ConnectFour {
     /// Panic if the target position is out of bounds
     pub const fn get(&self, row: usize, col: usize) -> Option<Player> {
         let column = &self.columns[col];
+
         if row >= BOARD_HEIGHT - column.filled {
             Some(column.cells[row])
         } else {
@@ -209,6 +217,27 @@ impl Player {
             Player::Player0 => Player::Player1,
             Player::Player1 => Player::Player0,
         }
+    }
+}
+
+impl Debug for ConnectFour {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        let mut board = [[None; BOARD_HEIGHT]; BOARD_WIDTH];
+
+        for col in 0..BOARD_WIDTH {
+            let column = &self.columns[col];
+
+            for row in 0..column.filled {
+                board[col][row] = Some(column.cells[row]);
+            }
+        }
+
+        f.debug_struct("ConnectFour")
+            .field("board", &board)
+            .field("move_count", &self.move_count)
+            .field("next_player", &self.next_player)
+            .field("status", &self.status)
+            .finish()
     }
 }
 

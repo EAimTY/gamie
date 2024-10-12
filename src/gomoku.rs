@@ -61,7 +61,7 @@ struct LastMove {
 }
 
 impl Gomoku {
-    /// Create a new Gomoku game.
+    /// Create a new Gomoku game
     pub const fn new() -> Result<Self, Infallible> {
         Ok(Self {
             board: [[None; BOARD_HEIGHT]; BOARD_WIDTH],
