@@ -5,6 +5,9 @@
 use core::convert::Infallible;
 use snafu::Snafu;
 
+const BOARD_WIDTH: usize = 7;
+const BOARD_HEIGHT: usize = 6;
+
 /// Connect Four
 ///
 /// # Examples
@@ -19,7 +22,7 @@ use snafu::Snafu;
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ConnectFour {
-    columns: [Column; 7],
+    columns: [Column; BOARD_WIDTH],
     move_count: usize,
     next: Player,
     status: Status,
@@ -54,7 +57,7 @@ pub enum ConnectFourError {
 #[derive(Clone, Copy, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct Column {
-    cells: [Player; 6],
+    cells: [Player; BOARD_HEIGHT],
     filled: usize,
 }
 
@@ -69,9 +72,9 @@ impl ConnectFour {
     pub const fn new() -> Result<Self, Infallible> {
         Ok(Self {
             columns: [Column {
-                cells: [Player::Player0; 6],
+                cells: [Player::Player0; BOARD_HEIGHT],
                 filled: 0,
-            }; 7],
+            }; BOARD_WIDTH],
             move_count: 0,
             next: Player::Player0,
             status: Status::Ongoing,
@@ -83,7 +86,7 @@ impl ConnectFour {
     /// Panic if the target position is out of bounds
     pub fn get(&self, row: usize, col: usize) -> Option<Player> {
         let column = &self.columns[col];
-        (row >= 6 - column.filled).then_some(column.cells[row])
+        (row >= BOARD_HEIGHT - column.filled).then_some(column.cells[row])
     }
 
     /// Put a piece
@@ -94,13 +97,13 @@ impl ConnectFour {
             return Err(ConnectFourError::GameEnded);
         }
 
-        if self.columns[col].filled == 6 {
+        if self.columns[col].filled == BOARD_HEIGHT {
             return Err(ConnectFourError::ColumnFilled);
         }
 
         let column = &mut self.columns[col];
 
-        let row = 6 - 1 - column.filled;
+        let row = BOARD_HEIGHT - 1 - column.filled;
 
         column.cells[row] = self.next;
         column.filled += 1;
@@ -132,8 +135,10 @@ impl ConnectFour {
     fn update_status(&mut self, last_move: LastMove) {
         // to determine if the game is ended by the last move, 7 positions centered at the last move are checked on each direction
 
-        let checking_col_range = last_move.col.saturating_sub(3)..=(last_move.col + 3).min(7 - 1);
-        let checking_row_range = last_move.row.saturating_sub(3)..=(last_move.row + 3).min(6 - 1);
+        let checking_col_range =
+            last_move.col.saturating_sub(3)..=(last_move.col + 3).min(BOARD_WIDTH - 1);
+        let checking_row_range =
+            last_move.row.saturating_sub(3)..=(last_move.row + 3).min(BOARD_HEIGHT - 1);
         let mut continuous_player_pieces = 0;
 
         // horizontal
@@ -187,7 +192,7 @@ impl ConnectFour {
         }
 
         // check draw
-        if self.move_count == 7 * 6 {
+        if self.move_count == BOARD_WIDTH * BOARD_HEIGHT {
             self.status = Status::Draw;
         }
     }
