@@ -64,7 +64,7 @@ impl Gomoku {
     /// Create a new Gomoku game.
     pub const fn new() -> Result<Self, Infallible> {
         Ok(Self {
-            board: [[None; 15]; 15],
+            board: [[None; BOARD_HEIGHT]; BOARD_WIDTH],
             move_count: 0,
             next_player: Player::Player0,
             status: Status::Ongoing,

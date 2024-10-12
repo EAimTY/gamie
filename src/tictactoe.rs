@@ -1,44 +1,160 @@
 //! Tic-Tac-Toe
 //!
-//! Check struct [`TicTacToe`](https://docs.rs/gamie/*/gamie/tictactoe/struct.TicTacToe.html) for more information
-//!
-//! # Examples
-//!
-//! ```rust
-//! use gamie::tictactoe::{Player as TicTacToePlayer, TicTacToe};
-//!
-//! # fn tictactoe() {
-//! let mut game = TicTacToe::new().unwrap();
-//!
-//! game.place(TicTacToePlayer::Player0, 1, 1).unwrap();
-//! game.place(TicTacToePlayer::Player1, 0, 0).unwrap();
-//!
-//! // ...
-//!
-//! println!("{:?}", game.get_game_status());
-//! # }
-//! ```
+//! Check struct [`TicTacToe`] for more information
 
 use core::convert::Infallible;
 use snafu::Snafu;
 
+const BOARD_WIDTH: usize = 3;
+const BOARD_HEIGHT: usize = 3;
+
 /// Tic-Tac-Toe
 ///
-/// Passing an invalid position to a method will cause panic. Check the target position validity first when dealing with user input
+/// # Examples
+///
+/// ```rust
+/// # use gamie::tictactoe::TicTacToe;
+/// let mut game = TicTacToe::new().unwrap();
+/// game.put(1, 0).unwrap();
+/// game.put(0, 1).unwrap();
+/// // ...
+/// ```
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct TicTacToe {
-    board: [[Option<Player>; 3]; 3],
-    next: Player,
+    board: [[Option<Player>; BOARD_HEIGHT]; BOARD_WIDTH],
+    move_count: usize,
+    next_player: Player,
     status: Status,
 }
 
-/// Players
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+/// Player
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Player {
     Player0,
     Player1,
+}
+
+/// Game status
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum Status {
+    Ongoing,
+    Draw,
+    Win(Player),
+}
+
+/// Errors that can occur when placing a piece on the board
+#[derive(Debug, Eq, PartialEq, Snafu)]
+pub enum TicTacToeError {
+    #[snafu(display("position occupied"))]
+    PositionOccupied,
+    #[snafu(display("game ended"))]
+    GameEnded,
+}
+
+struct LastMove {
+    player: Player,
+    row: usize,
+    col: usize,
+}
+
+impl TicTacToe {
+    /// Create a new Tic-Tac-Toe game
+    pub const fn new() -> Result<Self, Infallible> {
+        Ok(Self {
+            board: [[None; BOARD_HEIGHT]; BOARD_WIDTH],
+            move_count: 0,
+            next_player: Player::Player0,
+            status: Status::Ongoing,
+        })
+    }
+
+    /// Get a piece at a position
+    ///
+    /// Panic if the target position is out of bounds
+    pub fn get(&self, row: usize, col: usize) -> Option<Player> {
+        self.board[row][col]
+    }
+
+    /// Put a piece
+    ///
+    /// Panic if the target position is out of bounds
+    pub fn put(&mut self, row: usize, col: usize) -> Result<(), TicTacToeError> {
+        if matches!(self.status, Status::Win(_) | Status::Draw) {
+            return Err(TicTacToeError::GameEnded);
+        }
+
+        if self.board[row][col].is_some() {
+            return Err(TicTacToeError::PositionOccupied);
+        }
+
+        self.board[row][col] = Some(self.next_player);
+
+        let last_move = LastMove {
+            player: self.next_player,
+            row,
+            col,
+        };
+
+        self.move_count += 1;
+        self.next_player = self.next_player.other();
+
+        self.update_status(last_move);
+
+        Ok(())
+    }
+
+    /// Get the next player
+    pub fn next_player(&self) -> Player {
+        self.next_player
+    }
+
+    /// Get game status
+    pub fn status(&self) -> &Status {
+        &self.status
+    }
+
+    fn update_status(&mut self, last_move: LastMove) {
+        // to determine if the game is ended by the last move, 3 positions centered at the last move are checked on each direction
+
+        // horizontal
+        if self.get(last_move.row, 0) == self.get(last_move.row, 1)
+            && self.get(last_move.row, 1) == self.get(last_move.row, 2)
+        {
+            self.status = Status::Win(last_move.player);
+            return;
+        }
+
+        // vertical
+        if self.get(0, last_move.col) == self.get(1, last_move.col)
+            && self.get(1, last_move.col) == self.get(2, last_move.col)
+        {
+            self.status = Status::Win(last_move.player);
+            return;
+        }
+
+        // check diagonal only if the last move is on the diagonal
+        if !((last_move.row == 1) ^ (last_move.col == 1)) {
+            // top-left to bottom-right diagonal
+            if self.get(0, 0) == self.get(1, 1) && self.get(1, 1) == self.get(2, 2) {
+                self.status = Status::Win(last_move.player);
+                return;
+            }
+
+            // top-right to bottom-left diagonal
+            if self.get(0, 2) == self.get(1, 1) && self.get(1, 1) == self.get(2, 0) {
+                self.status = Status::Win(last_move.player);
+                return;
+            }
+        }
+
+        // check draw
+        if self.move_count == BOARD_HEIGHT * BOARD_WIDTH {
+            self.status = Status::Draw;
+        }
+    }
 }
 
 impl Player {
@@ -51,129 +167,6 @@ impl Player {
     }
 }
 
-/// Game status
-#[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub enum Status {
-    Win(Player),
-    Tie,
-    InProgress,
-}
-
-impl TicTacToe {
-    /// Create a new Tic-Tac-Toe game
-    pub fn new() -> Result<Self, Infallible> {
-        Ok(Self {
-            board: [[None; 3]; 3],
-            next: Player::Player0,
-            status: Status::InProgress,
-        })
-    }
-
-    /// Get a cell reference from the game board
-    /// Panic when target position out of bounds
-    pub fn get(&self, row: usize, col: usize) -> &Option<Player> {
-        &self.board[row][col]
-    }
-
-    /// Place a piece on the board
-    /// Panic when target position out of bounds
-    pub fn place(&mut self, player: Player, row: usize, col: usize) -> Result<(), TicTacToeError> {
-        if self.is_ended() {
-            return Err(TicTacToeError::GameEnded);
-        }
-
-        if player != self.next {
-            return Err(TicTacToeError::WrongPlayer);
-        }
-
-        if self.board[row][col].is_some() {
-            return Err(TicTacToeError::OccupiedPosition);
-        }
-
-        self.board[row][col] = Some(player);
-        self.next = self.next.other();
-
-        self.check_game_status();
-
-        Ok(())
-    }
-
-    /// Check if the game was end
-    pub fn is_ended(&self) -> bool {
-        self.status != Status::InProgress
-    }
-
-    /// Get the next player
-    pub fn get_next_player(&self) -> Player {
-        self.next
-    }
-
-    /// Get the game status
-    pub fn get_game_status(&self) -> &Status {
-        &self.status
-    }
-
-    /// Get the winner of the game. Return `None` when the game is tied or not end yet
-    pub fn get_winner(&self) -> Option<Player> {
-        if let Status::Win(player) = self.status {
-            Some(player)
-        } else {
-            None
-        }
-    }
-
-    fn check_game_status(&mut self) {
-        for row in 0..3 {
-            if self.board[row][0].is_some()
-                && self.board[row][0] == self.board[row][1]
-                && self.board[row][1] == self.board[row][2]
-            {
-                let winner = unsafe { self.board[row][0].unwrap_unchecked() };
-                self.status = Status::Win(winner);
-                return;
-            }
-        }
-
-        for col in 0..3 {
-            if self.board[0][col].is_some()
-                && self.board[0][col] == self.board[1][col]
-                && self.board[1][col] == self.board[2][col]
-            {
-                let winner = unsafe { self.board[0][col].unwrap_unchecked() };
-                self.status = Status::Win(winner);
-                return;
-            }
-        }
-
-        if self.board[1][1].is_some()
-            && ((self.board[0][0] == self.board[1][1] && self.board[1][1] == self.board[2][2])
-                || (self.board[0][2] == self.board[1][1] && self.board[1][1] == self.board[2][0]))
-        {
-            let winner = unsafe { self.board[1][1].unwrap_unchecked() };
-            self.status = Status::Win(winner);
-            return;
-        }
-
-        self.status = if self.board.iter().flatten().all(|p| p.is_some()) {
-            Status::Tie
-        } else {
-            Status::InProgress
-        };
-    }
-}
-
-/// Errors that can occur when placing a piece on the board
-#[derive(Debug, Eq, PartialEq, Snafu)]
-pub enum TicTacToeError {
-    #[snafu(display("Wrong player"))]
-    WrongPlayer,
-    #[snafu(display("Occupied position"))]
-    OccupiedPosition,
-    #[snafu(display("The game was already end"))]
-    GameEnded,
-}
-
 #[cfg(test)]
 mod tests {
     use crate::tictactoe::*;
@@ -182,45 +175,20 @@ mod tests {
     fn test() {
         let mut game = TicTacToe::new().unwrap();
 
-        assert_eq!(game.get_next_player(), Player::Player0,);
+        game.put(1, 1).unwrap();
 
-        assert_eq!(game.place(Player::Player0, 1, 1), Ok(()));
+        assert_eq!(game.next_player(), Player::Player1);
 
-        assert_eq!(game.get_next_player(), Player::Player1,);
+        game.put(1, 0).unwrap();
 
-        assert_eq!(
-            game.place(Player::Player0, 0, 0),
-            Err(TicTacToeError::WrongPlayer)
-        );
+        assert_eq!(game.next_player(), Player::Player0);
+        assert_eq!(game.put(1, 1), Err(TicTacToeError::PositionOccupied));
 
-        assert_eq!(game.place(Player::Player1, 1, 0), Ok(()));
+        game.put(2, 2).unwrap();
+        game.put(2, 0).unwrap();
+        game.put(0, 0).unwrap();
 
-        assert_eq!(game.get_next_player(), Player::Player0,);
-
-        assert!(!game.is_ended());
-
-        assert_eq!(
-            game.place(Player::Player0, 1, 1),
-            Err(TicTacToeError::OccupiedPosition)
-        );
-
-        assert_eq!(game.place(Player::Player0, 2, 2), Ok(()));
-
-        assert_eq!(game.get_game_status(), &Status::InProgress);
-
-        assert_eq!(game.place(Player::Player1, 2, 0), Ok(()));
-
-        assert_eq!(game.place(Player::Player0, 0, 0), Ok(()));
-
-        assert!(game.is_ended());
-
-        assert_eq!(game.get_winner(), Some(Player::Player0));
-
-        assert_eq!(
-            game.place(Player::Player0, 0, 2),
-            Err(TicTacToeError::GameEnded)
-        );
-
-        assert_eq!(game.get_winner(), Some(Player::Player0));
+        assert_eq!(game.status(), &Status::Win(Player::Player0));
+        assert_eq!(game.put(0, 2), Err(TicTacToeError::GameEnded));
     }
 }
