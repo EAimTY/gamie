@@ -1,3 +1,6 @@
-target/
+# macOS bullshit
 .DS_Store
-Cargo.lock
+
+# Rust
+/target/
+/Cargo.lock
