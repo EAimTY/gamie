@@ -72,7 +72,7 @@ impl Reversi {
         board[4][3] = Some(Player::Player1);
 
         Ok(Self {
-            board: [[None; BOARD_HEIGHT]; BOARD_WIDTH],
+            board,
             next_player: Player::Player0,
             status: Status::Ongoing,
         })
@@ -317,6 +317,8 @@ mod tests {
     #[test]
     fn test() {
         let mut game = Reversi::new().unwrap();
+
+        game.is_position_valid_for_put(2, 4).unwrap();
 
         game.put(2, 4).unwrap();
         game.put(2, 3).unwrap();
