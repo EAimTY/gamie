@@ -159,7 +159,7 @@ impl TicTacToe {
 
 impl Player {
     /// Get the opposite player
-    pub fn other(self) -> Self {
+    pub const fn other(self) -> Self {
         match self {
             Player::Player0 => Player::Player1,
             Player::Player1 => Player::Player0,
