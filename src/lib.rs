@@ -7,7 +7,7 @@ pub mod connect_four;
 #[cfg(feature = "gomoku")]
 pub mod gomoku;
 
-#[cfg(feature = "minesweeper")]
+#[cfg(all(feature = "minesweeper", feature = "alloc"))]
 pub mod minesweeper;
 
 #[cfg(feature = "reversi")]

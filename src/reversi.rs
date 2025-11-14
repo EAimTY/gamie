@@ -1,6 +1,11 @@
-//! Reversi
+//! Reversi (Othello) game implementation
 //!
-//! Check struct [`Reversi`] for more information
+//! Reversi is a strategy board game for two players, played on an 8×8 board.
+//! Players take turns placing pieces on the board, flipping opponent pieces
+//! that are surrounded by the current player's pieces in any direction
+//! (horizontal, vertical, or diagonal).
+//!
+//! See [`Game`] for the main game interface.
 
 use core::{cmp::Ordering, convert::Infallible};
 use thiserror::Error;
@@ -8,32 +13,38 @@ use thiserror::Error;
 const BOARD_WIDTH: usize = 8;
 const BOARD_HEIGHT: usize = 8;
 
-/// Reversi
+/// A Reversi (Othello) game instance
+///
+/// The game is played on an 8×8 board where two players alternate placing their pieces.
+/// Player0 always goes first. The game ends when neither player can make a valid move,
+/// and the player with the most pieces wins.
 ///
 /// # Examples
 ///
 /// ```rust
-/// # use gamie::reversi::{Player, Reversi};
-/// let mut game = Reversi::new().unwrap();
+/// # use gamie::reversi::{Player, Game};
+/// let mut game = Game::new().unwrap();
 ///
-/// game.put(2, 4).unwrap();
+/// // Player0's turn
+/// game.place(2, 4).unwrap();
 ///
+/// // Player1's turn
+/// game.place(2, 3).unwrap();
 ///
-/// // The next player may not be able to place a piece onto any position, so manually check `next_player()` to determine the next player
-/// assert_eq!(game.next_player(), Player::Player1);
-///
-/// game.put(2, 3).unwrap();
-/// // ...
+/// // Continue playing...
 /// ```
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct Reversi {
+pub struct Game {
     board: [[Option<Player>; BOARD_HEIGHT]; BOARD_WIDTH],
     next_player: Player,
     status: Status,
 }
 
-/// Player
+/// Represents a player in the game
+///
+/// There are two players in Reversi. Player0 always makes the first move,
+/// followed by Player1, and they continue alternating turns throughout the game.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Player {
@@ -41,7 +52,12 @@ pub enum Player {
     Player1,
 }
 
-/// Game status
+/// The current status of the game
+///
+/// The game can be in one of three states:
+/// - [`Ongoing`](Status::Ongoing): The game is still in progress
+/// - [`Win`](Status::Win): A player has won by having the most pieces
+/// - [`Draw`](Status::Draw): Both players have the same number of pieces
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Status {
@@ -50,19 +66,30 @@ pub enum Status {
     Win(Player),
 }
 
-/// Errors that can occur when placing a piece onto the board
+/// Errors that can occur when placing a piece on the board
+///
+/// These errors prevent invalid moves from being made during the game.
 #[derive(Debug, Error)]
-pub enum ReversiError {
+pub enum Error {
+    /// The position is already occupied by a piece
     #[error("position occupied")]
     PositionOccupied,
+    /// The move would not flip any opponent pieces
     #[error("invalid position")]
     InvalidPosition,
+    /// The game has already ended (either in a win or draw)
     #[error("game ended")]
     GameEnded,
 }
 
-impl Reversi {
-    /// Create a new Reversi game
+impl Game {
+    /// Creates a new Reversi game with the standard starting position
+    ///
+    /// The board is initialized with 4 pieces in the center:
+    /// - Player0 at positions (3,3) and (4,4)
+    /// - Player1 at positions (3,4) and (4,3)
+    ///
+    /// Player0 will make the first move.
     pub const fn new() -> Result<Self, Infallible> {
         let mut board = [[None; BOARD_HEIGHT]; BOARD_WIDTH];
 
@@ -78,23 +105,52 @@ impl Reversi {
         })
     }
 
-    /// Get a piece at a position
+    /// Gets the piece at the specified position
     ///
-    /// Panic if the target position is out of bounds
+    /// Returns `Some(Player)` if a piece is present at the given position,
+    /// or `None` if the position is empty.
+    ///
+    /// # Parameters
+    ///
+    /// - `row`: The row index (0-7)
+    /// - `col`: The column index (0-7)
+    ///
+    /// # Panics
+    ///
+    /// Panics if `row` or `col` is out of bounds (greater than or equal to 8)
     pub const fn get(&self, row: usize, col: usize) -> Option<Player> {
         self.board[row][col]
     }
 
-    /// Put a piece
+    /// Places a piece for the current player at the specified position
     ///
-    /// Panic if the target position is out of bounds
-    pub fn put(&mut self, row: usize, col: usize) -> Result<(), ReversiError> {
+    /// The current player's piece (returned by [`next_player()`](Self::next_player))
+    /// is placed at the given position and flips all opponent pieces that are captured
+    /// in any direction (horizontal, vertical, or diagonal). After a successful placement,
+    /// the turn automatically switches to the other player (if they have valid moves).
+    ///
+    /// # Parameters
+    ///
+    /// - `row`: The row index (0-7)
+    /// - `col`: The column index (0-7)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - The position is already occupied ([`Error::PositionOccupied`])
+    /// - The move would not flip any opponent pieces ([`Error::InvalidPosition`])
+    /// - The game has already ended ([`Error::GameEnded`])
+    ///
+    /// # Panics
+    ///
+    /// Panics if `row` or `col` is out of bounds (greater than or equal to 8)
+    pub fn place(&mut self, row: usize, col: usize) -> Result<(), Error> {
         if matches!(self.status, Status::Win(_) | Status::Draw) {
-            return Err(ReversiError::GameEnded);
+            return Err(Error::GameEnded);
         }
 
         if self.board[row][col].is_some() {
-            return Err(ReversiError::PositionOccupied);
+            return Err(Error::PositionOccupied);
         }
 
         let flipping_left_range = (0..col).rev();
@@ -102,52 +158,53 @@ impl Reversi {
         let flipping_up_range = (0..row).rev();
         let flipping_down_range = row + 1..BOARD_HEIGHT;
 
-        let mut is_flipped = false;
+        let mut any_flipped = false;
 
         // flip left
-        is_flipped |= self.flip_in_line(flipping_left_range.clone().map(|col| (row, col)));
+        any_flipped |= self.try_flip_line(flipping_left_range.clone().map(|col| (row, col)));
 
         // flip right
-        is_flipped |= self.flip_in_line(flipping_right_range.clone().map(|col| (row, col)));
+        any_flipped |= self.try_flip_line(flipping_right_range.clone().map(|col| (row, col)));
 
         // flip up
-        is_flipped |= self.flip_in_line(flipping_up_range.clone().map(|row| (row, col)));
+        any_flipped |= self.try_flip_line(flipping_up_range.clone().map(|row| (row, col)));
 
         // flip down
-        is_flipped |= self.flip_in_line(flipping_down_range.clone().map(|row| (row, col)));
+        any_flipped |= self.try_flip_line(flipping_down_range.clone().map(|row| (row, col)));
 
         // flip upper left
-        is_flipped |= self.flip_in_line(flipping_up_range.clone().zip(flipping_left_range.clone()));
+        any_flipped |=
+            self.try_flip_line(flipping_up_range.clone().zip(flipping_left_range.clone()));
 
         // flip upper right
-        is_flipped |=
-            self.flip_in_line(flipping_up_range.clone().zip(flipping_right_range.clone()));
+        any_flipped |=
+            self.try_flip_line(flipping_up_range.clone().zip(flipping_right_range.clone()));
 
         // flip lower left
-        is_flipped |=
-            self.flip_in_line(flipping_down_range.clone().zip(flipping_left_range.clone()));
+        any_flipped |=
+            self.try_flip_line(flipping_down_range.clone().zip(flipping_left_range.clone()));
 
         // flip lower right
-        is_flipped |= self.flip_in_line(flipping_down_range.zip(flipping_right_range));
+        any_flipped |= self.try_flip_line(flipping_down_range.zip(flipping_right_range));
 
-        if !is_flipped {
-            return Err(ReversiError::InvalidPosition);
+        if !any_flipped {
+            return Err(Error::InvalidPosition);
         }
 
         // place the piece
         self.board[row][col] = Some(self.next_player);
 
         self.next_player = self.next_player.other();
-        if self.is_current_player_movable() {
+        if self.can_current_player_move() {
             return Ok(());
         }
 
         self.next_player = self.next_player.other();
-        if self.is_current_player_movable() {
+        if self.can_current_player_move() {
             return Ok(());
         }
 
-        // both players cannot move, game ends
+        // Neither player can move; the game ends
         let mut player0_count = 0u8;
         let mut player1_count = 0u8;
 
@@ -170,16 +227,33 @@ impl Reversi {
         Ok(())
     }
 
-    /// Check if target position is valid for placing a piece
+    /// Checks if the current player can place a piece at the specified position
     ///
-    /// Panic if the target position is out of bounds
-    pub fn is_position_valid_for_put(&self, row: usize, col: usize) -> Result<(), ReversiError> {
+    /// This method validates whether placing a piece at the given position would
+    /// be a legal move for the current player (without actually making the move).
+    ///
+    /// # Parameters
+    ///
+    /// - `row`: The row index (0-7)
+    /// - `col`: The column index (0-7)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - The position is already occupied ([`Error::PositionOccupied`])
+    /// - The move would not flip any opponent pieces ([`Error::InvalidPosition`])
+    /// - The game has already ended ([`Error::GameEnded`])
+    ///
+    /// # Panics
+    ///
+    /// Panics if `row` or `col` is out of bounds (greater than or equal to 8)
+    pub fn can_place_at(&self, row: usize, col: usize) -> Result<(), Error> {
         if matches!(self.status, Status::Win(_) | Status::Draw) {
-            return Err(ReversiError::GameEnded);
+            return Err(Error::GameEnded);
         }
 
         if self.board[row][col].is_some() {
-            return Err(ReversiError::PositionOccupied);
+            return Err(Error::PositionOccupied);
         }
 
         // check each direction for a valid move
@@ -190,65 +264,71 @@ impl Reversi {
         let checking_down_range = row + 1..BOARD_HEIGHT;
 
         // check left
-        if self.is_clipping_in_line(checking_left_range.clone().map(|col| (row, col))) {
+        if self.can_flip_line(checking_left_range.clone().map(|col| (row, col))) {
             return Ok(());
         }
 
         // check right
-        if self.is_clipping_in_line(checking_right_range.clone().map(|col| (row, col))) {
+        if self.can_flip_line(checking_right_range.clone().map(|col| (row, col))) {
             return Ok(());
         }
 
         // check up
-        if self.is_clipping_in_line(checking_up_range.clone().map(|row| (row, col))) {
+        if self.can_flip_line(checking_up_range.clone().map(|row| (row, col))) {
             return Ok(());
         }
 
         // check down
-        if self.is_clipping_in_line(checking_down_range.clone().map(|row| (row, col))) {
+        if self.can_flip_line(checking_down_range.clone().map(|row| (row, col))) {
             return Ok(());
         }
 
         // check upper left
-        if self.is_clipping_in_line(checking_up_range.clone().zip(checking_left_range.clone())) {
+        if self.can_flip_line(checking_up_range.clone().zip(checking_left_range.clone())) {
             return Ok(());
         }
 
         // check upper right
-        if self.is_clipping_in_line(checking_up_range.clone().zip(checking_right_range.clone())) {
+        if self.can_flip_line(checking_up_range.clone().zip(checking_right_range.clone())) {
             return Ok(());
         }
 
         // check lower left
-        if self.is_clipping_in_line(checking_down_range.clone().zip(checking_left_range.clone())) {
+        if self.can_flip_line(checking_down_range.clone().zip(checking_left_range.clone())) {
             return Ok(());
         }
 
         // check lower right
-        if self.is_clipping_in_line(checking_down_range.zip(checking_right_range)) {
+        if self.can_flip_line(checking_down_range.zip(checking_right_range)) {
             return Ok(());
         }
 
-        Err(ReversiError::InvalidPosition)
+        Err(Error::InvalidPosition)
     }
 
-    /// Get the next player
+    /// Gets the next player whose turn it is to move
+    ///
+    /// Returns the player who should make the next move. This changes
+    /// after each successful call to [`place()`](Self::place).
     pub const fn next_player(&self) -> Player {
         self.next_player
     }
 
-    /// Get game status
+    /// Gets the current game status
+    ///
+    /// Returns whether the game is ongoing, ended in a draw, or won by a player.
+    /// The status is automatically updated after each move.
     pub const fn status(&self) -> &Status {
         &self.status
     }
 
-    fn is_current_player_movable(&self) -> bool {
+    fn can_current_player_move(&self) -> bool {
         for row in 0..BOARD_HEIGHT {
             for col in 0..BOARD_WIDTH {
-                match self.is_position_valid_for_put(row, col) {
-                    Err(ReversiError::PositionOccupied | ReversiError::InvalidPosition) => continue,
+                match self.can_place_at(row, col) {
+                    Err(Error::PositionOccupied | Error::InvalidPosition) => continue,
                     Ok(()) => return true,
-                    Err(ReversiError::GameEnded) => unreachable!(),
+                    Err(Error::GameEnded) => unreachable!(),
                 }
             }
         }
@@ -256,7 +336,7 @@ impl Reversi {
         false
     }
 
-    fn flip_in_line(&mut self, line: impl Iterator<Item = (usize, usize)> + Clone) -> bool {
+    fn try_flip_line(&mut self, line: impl Iterator<Item = (usize, usize)> + Clone) -> bool {
         let mut skipped = 0;
 
         let Some((row, col)) = line
@@ -282,7 +362,7 @@ impl Reversi {
         true
     }
 
-    fn is_clipping_in_line(&self, line: impl Iterator<Item = (usize, usize)>) -> bool {
+    fn can_flip_line(&self, line: impl Iterator<Item = (usize, usize)>) -> bool {
         let mut skipped = false;
 
         let Some((row, col)) = line
@@ -301,7 +381,9 @@ impl Reversi {
 }
 
 impl Player {
-    /// Get the other player
+    /// Returns the opposite player
+    ///
+    /// If this player is Player0, returns Player1, and vice versa.
     pub const fn other(self) -> Self {
         match self {
             Player::Player0 => Player::Player1,
@@ -316,17 +398,14 @@ mod tests {
 
     #[test]
     fn test() {
-        let mut game = Reversi::new().unwrap();
+        let mut game = Game::new().unwrap();
 
-        game.is_position_valid_for_put(2, 4).unwrap();
+        game.can_place_at(2, 4).unwrap();
 
-        game.put(2, 4).unwrap();
-        game.put(2, 3).unwrap();
+        game.place(2, 4).unwrap();
+        game.place(2, 3).unwrap();
 
-        assert!(matches!(
-            game.put(2, 3),
-            Err(ReversiError::PositionOccupied)
-        ));
-        assert!(matches!(game.put(2, 6), Err(ReversiError::InvalidPosition)));
+        assert!(matches!(game.place(2, 3), Err(Error::PositionOccupied)));
+        assert!(matches!(game.place(2, 6), Err(Error::InvalidPosition)));
     }
 }

@@ -1,41 +1,40 @@
 # gamie
 
-A Rust library provides abstractions for several classic tiny games.
+A Rust library providing abstractions for several classic tiny games.
 
 [![Version](https://img.shields.io/crates/v/gamie.svg?style=flat)](https://crates.io/crates/gamie)
 [![Documentation](https://img.shields.io/badge/docs-release-brightgreen.svg?style=flat)](https://docs.rs/gamie)
 [![License](https://img.shields.io/crates/l/gamie.svg?style=flat)](https://github.com/EAimTY/gamie/blob/master/LICENSE)
 
-gamie provides simple yet adequate abstractions for several classic tiny games.
+gamie provides simple, well-designed abstractions for several classic tiny games.
 
-gamie only came with a few dependencies, it can be easily integrated into your projects.
+gamie has minimal dependencies and can be easily integrated into your projects.
 
 ## Usage
 
-To use gamie, you should enable modules in `Cargo.toml`. For example `tictactoe`:
+To use gamie, enable the desired feature flags in `Cargo.toml`. For example, to use `tictactoe`:
 
 ```toml
 [dependencies]
 gamie = { version = "0.9.0", features = ["std", "tictactoe"] }
 ```
 
-Now you can use the `TicTacToe` game abstraction:
+Now you can use the Tic-Tac-Toe game abstraction:
 
 ```rust
-use gamie::tictactoe::{TicTacToe, Player as TicTacToePlayer, Status as TicTacToeGameStatus};
+use gamie::tictactoe::{Game, Status};
 
-let mut game = TicTacToe::new().unwrap();
-game.place(TicTacToePlayer::Player0, 1, 1).unwrap();
-game.place(TicTacToePlayer::Player1, 0, 0).unwrap();
-game.place(TicTacToePlayer::Player0, 0, 2).unwrap();
-game.place(TicTacToePlayer::Player1, 2, 0).unwrap();
-game.place(TicTacToePlayer::Player0, 1, 0).unwrap();
-game.place(TicTacToePlayer::Player1, 1, 2).unwrap();
-game.place(TicTacToePlayer::Player0, 2, 1).unwrap();
-game.place(TicTacToePlayer::Player1, 0, 1).unwrap();
-game.place(TicTacToePlayer::Player0, 2, 2).unwrap();
-assert!(game.is_ended());
-assert_eq!(game.get_game_status(), &TicTacToeGameStatus::Tie);
+let mut game = Game::new().unwrap();
+game.put(1, 1).unwrap();  // Player0 at center
+game.put(0, 0).unwrap();  // Player1 at top-left
+game.put(0, 2).unwrap();  // Player0 at top-right
+game.put(2, 0).unwrap();  // Player1 at bottom-left
+game.put(1, 0).unwrap();  // Player0 at middle-left
+game.put(1, 2).unwrap();  // Player1 at middle-right
+game.put(2, 1).unwrap();  // Player0 at bottom-center
+game.put(0, 1).unwrap();  // Player1 at top-center
+game.put(2, 2).unwrap();  // Player0 at bottom-right
+assert_eq!(game.status(), &Status::Draw);
 ```
 
 Check the [docs](https://docs.rs/gamie) for further information.
@@ -52,13 +51,13 @@ Currently, the following modules are available:
 
 ## Serialize / Deserialize
 
-Bring in the `serde` feature to enable serialization and deserialization for structs
-Opt in the `bincode` feature to enable encoding and decoding with [bincode](https://github.com/bincode-org/bincode)
+Enable the `serde` feature to add serialization and deserialization support for game structs.
+Enable the `bincode` feature to add encoding and decoding with [bincode](https://github.com/bincode-org/bincode).
 
 ## no_std
 
-This crate runs flawlessly on bare metal.
-To remove the Rust standard library dependency, opt out the `std` feature by disabling `default-features` in `Cargo.toml`:
+This crate supports `no_std` environments and runs flawlessly on bare metal.
+To remove the Rust standard library dependency, disable the `std` feature by setting `default-features = false` in `Cargo.toml`:
 
 ```toml
 [dependencies]
