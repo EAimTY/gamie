@@ -3,7 +3,7 @@
 //! Check struct [`Gomoku`] for more information
 
 use core::convert::Infallible;
-use snafu::Snafu;
+use thiserror::Error;
 
 const BOARD_WIDTH: usize = 15;
 const BOARD_HEIGHT: usize = 15;
@@ -46,11 +46,11 @@ pub enum Status {
 }
 
 /// Errors that can occur when placing a piece onto the board
-#[derive(Debug, Eq, PartialEq, Snafu)]
+#[derive(Debug, Error)]
 pub enum GomokuError {
-    #[snafu(display("position occupied"))]
+    #[error("position occupied")]
     PositionOccupied,
-    #[snafu(display("game ended"))]
+    #[error("game ended")]
     GameEnded,
 }
 

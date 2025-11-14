@@ -21,7 +21,7 @@ extern crate alloc;
 use alloc::{collections::vec_deque::VecDeque, vec::Vec};
 use core::array::IntoIter;
 use rand::Rng;
-use snafu::Snafu;
+use thiserror::Error;
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -62,19 +62,19 @@ pub enum CellStatus {
 }
 
 /// Errors that can occur.
-#[derive(Debug, Eq, PartialEq, Snafu)]
+#[derive(Debug, Error)]
 pub enum MinesweeperError {
-    #[snafu(display("too many mines"))]
+    #[error("too many mines")]
     TooManyMines,
-    #[snafu(display("too many flags"))]
+    #[error("too many flags")]
     TooManyFlags,
-    #[snafu(display("click on an already flagged cell"))]
+    #[error("click on an already flagged cell")]
     ClickOnFlagged,
-    #[snafu(display("click on an already revealed cell"))]
+    #[error("click on an already revealed cell")]
     ClickOnRevealed,
-    #[snafu(display("click is doing nothing"))]
+    #[error("click is doing nothing")]
     InvalidClick,
-    #[snafu(display("game ended"))]
+    #[error("game ended")]
     GameEnded,
 }
 

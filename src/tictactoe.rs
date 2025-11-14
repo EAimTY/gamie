@@ -3,7 +3,7 @@
 //! Check struct [`TicTacToe`] for more information
 
 use core::convert::Infallible;
-use snafu::Snafu;
+use thiserror::Error;
 
 const BOARD_WIDTH: usize = 3;
 const BOARD_HEIGHT: usize = 3;
@@ -46,11 +46,11 @@ pub enum Status {
 }
 
 /// Errors that can occur when placing a piece onto the board
-#[derive(Debug, Eq, PartialEq, Snafu)]
+#[derive(Debug, Error)]
 pub enum TicTacToeError {
-    #[snafu(display("position occupied"))]
+    #[error("position occupied")]
     PositionOccupied,
-    #[snafu(display("game ended"))]
+    #[error("game ended")]
     GameEnded,
 }
 
@@ -182,13 +182,16 @@ mod tests {
         game.put(1, 0).unwrap();
 
         assert_eq!(game.next_player(), Player::Player0);
-        assert_eq!(game.put(1, 1), Err(TicTacToeError::PositionOccupied));
+        assert!(matches!(
+            game.put(1, 1),
+            Err(TicTacToeError::PositionOccupied)
+        ));
 
         game.put(2, 2).unwrap();
         game.put(2, 0).unwrap();
         game.put(0, 0).unwrap();
 
         assert_eq!(game.status(), &Status::Win(Player::Player0));
-        assert_eq!(game.put(0, 2), Err(TicTacToeError::GameEnded));
+        assert!(matches!(game.put(0, 2), Err(TicTacToeError::GameEnded)));
     }
 }

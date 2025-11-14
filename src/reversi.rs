@@ -3,7 +3,7 @@
 //! Check struct [`Reversi`] for more information
 
 use core::{cmp::Ordering, convert::Infallible};
-use snafu::Snafu;
+use thiserror::Error;
 
 const BOARD_WIDTH: usize = 8;
 const BOARD_HEIGHT: usize = 8;
@@ -51,13 +51,13 @@ pub enum Status {
 }
 
 /// Errors that can occur when placing a piece onto the board
-#[derive(Debug, Eq, PartialEq, Snafu)]
+#[derive(Debug, Error)]
 pub enum ReversiError {
-    #[snafu(display("position occupied"))]
+    #[error("position occupied")]
     PositionOccupied,
-    #[snafu(display("invalid position"))]
+    #[error("invalid position")]
     InvalidPosition,
-    #[snafu(display("game ended"))]
+    #[error("game ended")]
     GameEnded,
 }
 
@@ -323,7 +323,10 @@ mod tests {
         game.put(2, 4).unwrap();
         game.put(2, 3).unwrap();
 
-        assert_eq!(game.put(2, 3), Err(ReversiError::PositionOccupied));
-        assert_eq!(game.put(2, 6), Err(ReversiError::InvalidPosition));
+        assert!(matches!(
+            game.put(2, 3),
+            Err(ReversiError::PositionOccupied)
+        ));
+        assert!(matches!(game.put(2, 6), Err(ReversiError::InvalidPosition)));
     }
 }

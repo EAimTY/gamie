@@ -6,7 +6,7 @@ use core::{
     convert::Infallible,
     fmt::{Debug, Formatter, Result as FmtResult},
 };
-use snafu::Snafu;
+use thiserror::Error;
 
 const BOARD_WIDTH: usize = 7;
 const BOARD_HEIGHT: usize = 6;
@@ -49,11 +49,11 @@ pub enum Status {
 }
 
 /// Errors that can occur when putting a piece onto the board
-#[derive(Debug, Eq, PartialEq, Snafu)]
+#[derive(Debug, Error)]
 pub enum ConnectFourError {
-    #[snafu(display("column filled"))]
+    #[error("column filled")]
     ColumnFilled,
-    #[snafu(display("game ended"))]
+    #[error("game ended")]
     GameEnded,
 }
 
