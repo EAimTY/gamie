@@ -16,7 +16,7 @@ To use gamie, enable the desired feature flags in `Cargo.toml`. For example, to 
 
 ```toml
 [dependencies]
-gamie = { version = "0.9.0", features = ["std", "tictactoe"] }
+gamie = { version = "0.10.0", features = ["std", "tictactoe"] }
 ```
 
 Now you can use the Tic-Tac-Toe game abstraction:
@@ -43,16 +43,15 @@ Check the [docs](https://docs.rs/gamie) for further information.
 
 Currently, the following modules are available:
 
-- [connect_four](https://docs.rs/gamie/*/gamie/connect_four)
-- [gomoku](https://docs.rs/gamie/*/gamie/gomoku)
-- [minesweeper](https://docs.rs/gamie/*/gamie/minesweeper)
-- [reversi](https://docs.rs/gamie/*/gamie/reversi)
-- [tictactoe](https://docs.rs/gamie/*/gamie/tictactoe)
+- [connect_four](https://docs.rs/gamie/latest/gamie/connect_four)
+- [gomoku](https://docs.rs/gamie/latest/gamie/gomoku)
+- [minesweeper](https://docs.rs/gamie/latest/gamie/minesweeper)
+- [reversi](https://docs.rs/gamie/latest/gamie/reversi)
+- [tictactoe](https://docs.rs/gamie/latest/gamie/tictactoe)
 
 ## Serialize / Deserialize
 
 Enable the `serde` feature to add serialization and deserialization support for game structs.
-Enable the `bincode` feature to add encoding and decoding with [bincode](https://github.com/bincode-org/bincode).
 
 ## no_std
 
@@ -61,7 +60,7 @@ To remove the Rust standard library dependency, disable the `std` feature by set
 
 ```toml
 [dependencies]
-gamie = { version = "0.9.0", default-features = false, features = ["tictactoe"] }
+gamie = { version = "0.10.0", default-features = false, features = ["tictactoe"] }
 ```
 
 ## License
