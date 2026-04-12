@@ -25,7 +25,7 @@ extern crate alloc;
 
 use alloc::{collections::vec_deque::VecDeque, vec::Vec};
 use core::array::IntoIter;
-use rand::Rng;
+use rand::{Rng, RngExt as _};
 use thiserror::Error;
 
 /// A Minesweeper game instance

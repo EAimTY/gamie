@@ -1,6 +1,6 @@
 [package]
 name = "gamie"
-version = "0.10.1"
+version = "0.11.0"
 authors = ["EAimTY <ea.imty@gmail.com>"]
 description = "A Rust library provides abstractions for several classic tiny games"
 categories = ["games", "game-development", "no-std"]
@@ -30,7 +30,7 @@ default-features = false
 features = ["std", "serde", "connect_four", "gomoku", "minesweeper", "reversi", "tictactoe"]
 
 [dependencies.rand]
-version = "0.9.2"
+version = "0.10.1"
 default-features = false
 optional = true
 
@@ -41,10 +41,10 @@ features = ["derive"]
 optional = true
 
 [dependencies.thiserror]
-version = "2.0.17"
+version = "2.0.18"
 default-features = false
 
 [dev-dependencies.rand]
-version = "0.9.2"
+version = "0.10.1"
 default-features = false
 features = ["std", "thread_rng"]
