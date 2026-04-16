@@ -66,6 +66,7 @@ pub enum Status {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Cell {
     is_mine: bool,
+    adjacent_mine_count: usize,
     status: CellStatus,
 }
 
@@ -76,7 +77,7 @@ pub enum CellStatus {
     /// The cell has not been revealed or flagged yet
     Hidden,
     /// The cell has been revealed and shows the count of adjacent mines
-    Revealed { adjacent_mine_count: usize },
+    Revealed,
     /// The cell has been flagged by the player as potentially containing a mine
     Flagged,
     /// The cell contained a mine and was clicked, ending the game
@@ -155,8 +156,18 @@ impl Game {
 
             board.push(Cell {
                 is_mine,
+                adjacent_mine_count: 0,
                 status: CellStatus::Hidden,
             });
+        }
+
+        for row in 0..height {
+            for col in 0..width {
+                board[row * width + col].adjacent_mine_count =
+                    AdjacentCellCoords::new(width, height, row, col)
+                        .filter(|(row, col)| board[row * width + col].is_mine)
+                        .count();
+            }
         }
 
         Ok(Self {
@@ -225,16 +236,15 @@ impl Game {
 
         match self.board[row * self.width + col].status {
             CellStatus::Hidden => self.reveal([(row, col)]),
-            CellStatus::Revealed {
-                adjacent_mine_count,
-            } => {
+            CellStatus::Revealed => {
+                let adjacent_mine_count = self.board[row * self.width + col].adjacent_mine_count;
                 let mut adjacent_flagged_count = 0;
                 let mut adjacent_hidden_cell_coords = Vec::new();
 
                 for (row, col) in AdjacentCellCoords::new(self.width, self.height, row, col) {
                     match self.board[row * self.width + col].status {
                         CellStatus::Hidden => adjacent_hidden_cell_coords.push((row, col)),
-                        CellStatus::Revealed { .. } => {}
+                        CellStatus::Revealed => {}
                         CellStatus::Flagged => adjacent_flagged_count += 1,
                         CellStatus::Exploded => unreachable!(),
                     }
@@ -304,7 +314,7 @@ impl Game {
                 self.board[row * self.width + col].status = CellStatus::Hidden;
                 self.flag_count -= 1;
             }
-            CellStatus::Revealed { .. } => return Err(Error::ClickOnRevealed),
+            CellStatus::Revealed => return Err(Error::ClickOnRevealed),
             CellStatus::Exploded => unreachable!(),
         }
 
@@ -349,15 +359,9 @@ impl Game {
                 continue;
             }
 
-            let adjacent_mine_count = AdjacentCellCoords::new(self.width, self.height, row, col)
-                .filter(|(row, col)| self.board[row * self.width + col].is_mine)
-                .count();
+            self.board[row * self.width + col].status = CellStatus::Revealed;
 
-            self.board[row * self.width + col].status = CellStatus::Revealed {
-                adjacent_mine_count,
-            };
-
-            if !is_exploded && adjacent_mine_count == 0 {
+            if !is_exploded && self.board[row * self.width + col].adjacent_mine_count == 0 {
                 coords.extend(AdjacentCellCoords::new(self.width, self.height, row, col));
             }
         }
@@ -373,7 +377,7 @@ impl Game {
             .board
             .iter()
             .filter(|cell| !cell.is_mine)
-            .all(|cell| matches!(cell.status, CellStatus::Revealed { .. }));
+            .all(|cell| matches!(cell.status, CellStatus::Revealed));
 
         let all_flagged = self
             .board
@@ -393,6 +397,11 @@ impl Cell {
         self.is_mine
     }
 
+    /// Gets the number of mines adjacent to this cell
+    pub const fn adjacent_mine_count(&self) -> usize {
+        self.adjacent_mine_count
+    }
+
     /// Gets the current status of this cell
     pub const fn status(&self) -> &CellStatus {
         &self.status
@@ -407,12 +416,12 @@ impl AdjacentCellCoords {
     fn new(board_width: usize, board_height: usize, row: usize, col: usize) -> Self {
         Self {
             potentially_adjacent_cell_coords: [
-                (row - 1, col - 1),
-                (row - 1, col),
-                (row - 1, col + 1),
-                (row, col - 1),
+                (row.wrapping_sub(1), col.wrapping_sub(1)),
+                (row.wrapping_sub(1), col),
+                (row.wrapping_sub(1), col + 1),
+                (row, col.wrapping_sub(1)),
                 (row, col + 1),
-                (row + 1, col - 1),
+                (row + 1, col.wrapping_sub(1)),
                 (row + 1, col),
                 (row + 1, col + 1),
             ]
