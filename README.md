@@ -16,7 +16,7 @@ To use gamie, enable the desired feature flags in `Cargo.toml`. For example, to 
 
 ```toml
 [dependencies]
-gamie = { version = "0.13.0", features = ["std", "tictactoe"] }
+gamie = { version = "0.14.0", features = ["tictactoe"] }
 ```
 
 Now you can use the Tic-Tac-Toe game abstraction:
@@ -49,19 +49,16 @@ Currently, the following modules are available:
 - [reversi](https://docs.rs/gamie/latest/gamie/reversi)
 - [tictactoe](https://docs.rs/gamie/latest/gamie/tictactoe)
 
-## Serialize / Deserialize
+## Serialization
 
-Enable the `serde` feature to add serialization and deserialization support for game structs.
+Enable the `serde` feature to add serialization and deserialization support for game state types.
+
+Enable the `rkyv` feature to add `rkyv` archive, serialize, and deserialize support. Generated
+archived and resolver types are re-exported from each game module's `rkyv` submodule.
 
 ## no_std
 
-This crate supports `no_std` environments and runs flawlessly on bare metal.
-To remove the Rust standard library dependency, disable the `std` feature by setting `default-features = false` in `Cargo.toml`:
-
-```toml
-[dependencies]
-gamie = { version = "0.13.0", default-features = false, features = ["tictactoe"] }
-```
+This crate is `no_std` by default and runs flawlessly on bare metal.
 
 ## License
 

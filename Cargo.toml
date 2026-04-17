@@ -1,6 +1,6 @@
 [package]
 name = "gamie"
-version = "0.13.0"
+version = "0.14.0"
 authors = ["EAimTY <ea.imty@gmail.com>"]
 description = "A Rust library provides abstractions for several classic tiny games"
 categories = ["games", "game-development", "no-std"]
@@ -14,32 +14,21 @@ repository = "https://github.com/EAimTY/gamie"
 all-features = true
 
 [features]
-default = ["std"]
-std = ["alloc", "thiserror/std"]
+default = []
 alloc = []
 serde = ["dep:serde"]
-connect_four = []
-gomoku = []
-minesweeper = ["alloc", "dep:rand", "serde?/alloc"]
-reversi = []
-tictactoe = []
+rkyv = ["dep:rkyv"]
+connect_four = ["dep:thiserror"]
+gomoku = ["dep:thiserror"]
+minesweeper = ["alloc", "dep:thiserror", "dep:rand", "serde?/alloc", "rkyv?/alloc"]
+reversi = ["dep:thiserror"]
+tictactoe = ["dep:thiserror"]
 
-[dependencies.rand]
-version = "0.10.1"
-default-features = false
-optional = true
+[dependencies]
+rand = { version = "0.10.1", default-features = false, optional = true }
+rkyv = { version = "0.8.15", default-features = false, optional = true }
+serde = { version = "1.0.228", default-features = false, features = ["derive"], optional = true }
+thiserror = { version = "2.0.18", default-features = false, optional = true }
 
-[dependencies.serde]
-version = "1.0.228"
-default-features = false
-features = ["derive"]
-optional = true
-
-[dependencies.thiserror]
-version = "2.0.18"
-default-features = false
-
-[dev-dependencies.rand]
-version = "0.10.1"
-default-features = false
-features = ["std", "thread_rng"]
+[dev-dependencies]
+rand = { version = "0.10.1", default-features = false, features = ["std", "thread_rng"] }
