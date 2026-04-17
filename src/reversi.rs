@@ -339,15 +339,11 @@ impl Game {
     fn try_flip_line(&mut self, line: impl Iterator<Item = (usize, usize)> + Clone) -> bool {
         let mut skipped = 0;
 
-        let Some((row, col)) = line
-            .clone()
-            .skip_while(|(row, col)| {
-                let is_other_player = self.get(*row, *col) == Some(self.next_player().other());
-                skipped += is_other_player as usize;
-                is_other_player
-            })
-            .next()
-        else {
+        let Some((row, col)) = line.clone().find(|(row, col)| {
+            let is_other_player = self.get(*row, *col) == Some(self.next_player().other());
+            skipped += is_other_player as usize;
+            !is_other_player
+        }) else {
             return false;
         };
 
@@ -362,17 +358,14 @@ impl Game {
         true
     }
 
-    fn can_flip_line(&self, line: impl Iterator<Item = (usize, usize)>) -> bool {
+    fn can_flip_line(&self, mut line: impl Iterator<Item = (usize, usize)>) -> bool {
         let mut skipped = false;
 
-        let Some((row, col)) = line
-            .skip_while(|(row, col)| {
-                let is_other_player = self.get(*row, *col) == Some(self.next_player().other());
-                skipped |= is_other_player;
-                is_other_player
-            })
-            .next()
-        else {
+        let Some((row, col)) = line.find(|(row, col)| {
+            let is_other_player = self.get(*row, *col) == Some(self.next_player().other());
+            skipped |= is_other_player;
+            !is_other_player
+        }) else {
             return false;
         };
 
