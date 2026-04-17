@@ -1,7 +1,7 @@
 //! Gomoku (Five in a Row) game implementation
 //!
 //! Gomoku is a strategy board game played on a 15×15 grid where two players alternate
-//! placing pieces. The first player to get exactly five pieces in a row (horizontally,
+//! placing pieces. The first player to get five or more pieces in a row (horizontally,
 //! vertically, or diagonally) wins the game.
 //!
 //! See [`Game`] for the main game interface.
@@ -15,7 +15,7 @@ const BOARD_HEIGHT: usize = 15;
 /// A Gomoku (Five in a Row) game instance
 ///
 /// The game is played on a 15×15 board where two players alternate placing their pieces.
-/// Player0 always goes first. The game ends when a player gets exactly five pieces in a row
+/// Player0 always goes first. The game ends when a player gets five or more pieces in a row
 /// (horizontally, vertically, or diagonally) or when the board is full (resulting in a draw).
 ///
 /// # Examples
@@ -56,7 +56,7 @@ pub enum Player {
 ///
 /// The game can be in one of three states:
 /// - [`Ongoing`](Status::Ongoing): The game is still in progress
-/// - [`Win`](Status::Win): A player has won by getting five in a row
+/// - [`Win`](Status::Win): A player has won by getting five or more in a row
 /// - [`Draw`](Status::Draw): All positions are filled with no winner
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -176,61 +176,16 @@ impl Game {
     }
 
     fn update_status(&mut self, last_move: LastMove) {
-        // To determine if the game ends with the last move, check 9 positions centered at the last move in each direction
+        const DIRECTIONS: [(isize, isize); 4] = [(0, 1), (1, 0), (1, 1), (1, -1)];
 
-        let checking_row_range =
-            last_move.row.saturating_sub(4)..=(last_move.row + 4).min(BOARD_HEIGHT - 1);
-        let checking_col_range =
-            last_move.col.saturating_sub(4)..=(last_move.col + 4).min(BOARD_WIDTH - 1);
-        let mut consecutive_pieces = 0;
+        for (row_delta, col_delta) in DIRECTIONS {
+            let connected = 1
+                + self.count_direction(&last_move, row_delta, col_delta)
+                + self.count_direction(&last_move, -row_delta, -col_delta);
 
-        // Horizontal
-        for col in checking_col_range.clone() {
-            if self.get(last_move.row, col) == Some(last_move.player) {
-                consecutive_pieces += 1;
-                if consecutive_pieces == 5 {
-                    self.status = Status::Win(last_move.player);
-                    return;
-                }
-            }
-        }
-
-        // Vertical
-        consecutive_pieces = 0;
-
-        for row in checking_row_range.clone() {
-            if self.get(row, last_move.col) == Some(last_move.player) {
-                consecutive_pieces += 1;
-                if consecutive_pieces == 5 {
-                    self.status = Status::Win(last_move.player);
-                    return;
-                }
-            }
-        }
-
-        // Top-left to bottom-right diagonal
-        consecutive_pieces = 0;
-
-        for (row, col) in checking_row_range.clone().zip(checking_col_range.clone()) {
-            if self.get(row, col) == Some(last_move.player) {
-                consecutive_pieces += 1;
-                if consecutive_pieces == 5 {
-                    self.status = Status::Win(last_move.player);
-                    return;
-                }
-            }
-        }
-
-        // Top-right to bottom-left diagonal
-        consecutive_pieces = 0;
-
-        for (row, col) in checking_row_range.zip(checking_col_range.rev()) {
-            if self.get(row, col) == Some(last_move.player) {
-                consecutive_pieces += 1;
-                if consecutive_pieces == 5 {
-                    self.status = Status::Win(last_move.player);
-                    return;
-                }
+            if connected >= 5 {
+                self.status = Status::Win(last_move.player);
+                return;
             }
         }
 
@@ -238,6 +193,24 @@ impl Game {
         if self.move_count == BOARD_HEIGHT * BOARD_WIDTH {
             self.status = Status::Draw;
         }
+    }
+
+    fn count_direction(&self, last_move: &LastMove, row_delta: isize, col_delta: isize) -> usize {
+        let mut row = last_move.row as isize + row_delta;
+        let mut col = last_move.col as isize + col_delta;
+        let mut count = 0;
+
+        while row >= 0 && row < BOARD_HEIGHT as isize && col >= 0 && col < BOARD_WIDTH as isize {
+            if self.get(row as usize, col as usize) != Some(last_move.player) {
+                break;
+            }
+
+            count += 1;
+            row += row_delta;
+            col += col_delta;
+        }
+
+        count
     }
 }
 
@@ -250,5 +223,80 @@ impl Player {
             Player::Player0 => Player::Player1,
             Player::Player1 => Player::Player0,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::gomoku::*;
+
+    #[test]
+    fn separated_pieces_do_not_win() {
+        let mut game = Game::new().unwrap();
+
+        game.put(7, 0).unwrap();
+        game.put(0, 0).unwrap();
+        game.put(7, 2).unwrap();
+        game.put(0, 2).unwrap();
+        game.put(7, 6).unwrap();
+        game.put(0, 4).unwrap();
+        game.put(7, 8).unwrap();
+        game.put(0, 6).unwrap();
+        game.put(7, 4).unwrap();
+
+        assert_eq!(game.status(), &Status::Ongoing);
+    }
+
+    #[test]
+    fn detects_diagonal_win_near_board_edge() {
+        let mut game = Game::new().unwrap();
+
+        game.put(0, 4).unwrap();
+        game.put(14, 0).unwrap();
+        game.put(2, 6).unwrap();
+        game.put(14, 2).unwrap();
+        game.put(3, 7).unwrap();
+        game.put(14, 4).unwrap();
+        game.put(4, 8).unwrap();
+        game.put(14, 6).unwrap();
+        game.put(1, 5).unwrap();
+
+        assert_eq!(game.status(), &Status::Win(Player::Player0));
+    }
+
+    #[test]
+    fn detects_anti_diagonal_win_near_board_edge() {
+        let mut game = Game::new().unwrap();
+
+        game.put(0, 8).unwrap();
+        game.put(14, 0).unwrap();
+        game.put(2, 6).unwrap();
+        game.put(14, 2).unwrap();
+        game.put(3, 5).unwrap();
+        game.put(14, 4).unwrap();
+        game.put(4, 4).unwrap();
+        game.put(14, 6).unwrap();
+        game.put(1, 7).unwrap();
+
+        assert_eq!(game.status(), &Status::Win(Player::Player0));
+    }
+
+    #[test]
+    fn six_in_a_row_wins() {
+        let mut game = Game::new().unwrap();
+
+        game.put(7, 0).unwrap();
+        game.put(0, 0).unwrap();
+        game.put(7, 1).unwrap();
+        game.put(0, 2).unwrap();
+        game.put(7, 2).unwrap();
+        game.put(0, 4).unwrap();
+        game.put(7, 4).unwrap();
+        game.put(0, 6).unwrap();
+        game.put(7, 5).unwrap();
+        game.put(0, 8).unwrap();
+        game.put(7, 3).unwrap();
+
+        assert_eq!(game.status(), &Status::Win(Player::Player0));
     }
 }
