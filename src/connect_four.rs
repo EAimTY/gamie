@@ -9,7 +9,7 @@
 
 use core::{
     convert::Infallible,
-    fmt::{Debug, Formatter, Result as FmtResult},
+    fmt::{Debug, Error as FmtError, Formatter},
 };
 use thiserror::Error;
 
@@ -205,68 +205,16 @@ impl Game {
     }
 
     fn update_status(&mut self, last_move: LastMove) {
-        // To determine if the game ended with the last move, check 7 positions
-        // centered on the last move in each direction (horizontal, vertical, and both diagonals)
+        const DIRECTIONS: [(isize, isize); 4] = [(0, 1), (1, 0), (1, 1), (1, -1)];
 
-        let row_range = last_move.row.saturating_sub(3)..=(last_move.row + 3).min(BOARD_HEIGHT - 1);
-        let col_range = last_move.col.saturating_sub(3)..=(last_move.col + 3).min(BOARD_WIDTH - 1);
-        let mut consecutive_pieces = 0;
+        for (row_delta, col_delta) in DIRECTIONS {
+            let connected = 1
+                + self.count_direction(&last_move, row_delta, col_delta)
+                + self.count_direction(&last_move, -row_delta, -col_delta);
 
-        // horizontal
-        for col in col_range.clone() {
-            if self.get(last_move.row, col) == Some(last_move.player) {
-                consecutive_pieces += 1;
-                if consecutive_pieces == 4 {
-                    self.status = Status::Win(last_move.player);
-                    return;
-                }
-            } else {
-                consecutive_pieces = 0;
-            }
-        }
-
-        // vertical
-        consecutive_pieces = 0;
-
-        for row in row_range.clone() {
-            if self.get(row, last_move.col) == Some(last_move.player) {
-                consecutive_pieces += 1;
-                if consecutive_pieces == 4 {
-                    self.status = Status::Win(last_move.player);
-                    return;
-                }
-            } else {
-                consecutive_pieces = 0;
-            }
-        }
-
-        // top-left to bottom-right diagonal
-        consecutive_pieces = 0;
-
-        for (row, col) in row_range.clone().zip(col_range.clone()) {
-            if self.get(row, col) == Some(last_move.player) {
-                consecutive_pieces += 1;
-                if consecutive_pieces == 4 {
-                    self.status = Status::Win(last_move.player);
-                    return;
-                }
-            } else {
-                consecutive_pieces = 0;
-            }
-        }
-
-        // top-right to bottom-left diagonal
-        consecutive_pieces = 0;
-
-        for (row, col) in row_range.zip(col_range.rev()) {
-            if self.get(row, col) == Some(last_move.player) {
-                consecutive_pieces += 1;
-                if consecutive_pieces == 4 {
-                    self.status = Status::Win(last_move.player);
-                    return;
-                }
-            } else {
-                consecutive_pieces = 0;
+            if connected >= 4 {
+                self.status = Status::Win(last_move.player);
+                return;
             }
         }
 
@@ -274,6 +222,24 @@ impl Game {
         if self.move_count == BOARD_HEIGHT * BOARD_WIDTH {
             self.status = Status::Draw;
         }
+    }
+
+    fn count_direction(&self, last_move: &LastMove, row_delta: isize, col_delta: isize) -> usize {
+        let mut row = last_move.row as isize + row_delta;
+        let mut col = last_move.col as isize + col_delta;
+        let mut count = 0;
+
+        while row >= 0 && row < BOARD_HEIGHT as isize && col >= 0 && col < BOARD_WIDTH as isize {
+            if self.get(row as usize, col as usize) != Some(last_move.player) {
+                break;
+            }
+
+            count += 1;
+            row += row_delta;
+            col += col_delta;
+        }
+
+        count
     }
 }
 
@@ -290,14 +256,18 @@ impl Player {
 }
 
 impl Debug for Game {
-    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
         let mut board = [[None; BOARD_HEIGHT]; BOARD_WIDTH];
 
-        for col in 0..BOARD_WIDTH {
+        for (col, board_column) in board.iter_mut().enumerate() {
             let column = &self.columns[col];
 
-            for row in 0..column.filled {
-                board[col][row] = Some(column.cells[row]);
+            for (row, cell) in board_column
+                .iter_mut()
+                .enumerate()
+                .skip(BOARD_HEIGHT - column.filled)
+            {
+                *cell = Some(column.cells[row]);
             }
         }
 
@@ -313,6 +283,7 @@ impl Debug for Game {
 #[cfg(test)]
 mod tests {
     use crate::connect_four::*;
+    use core::fmt::Write as _;
 
     #[test]
     fn test() {
@@ -335,5 +306,38 @@ mod tests {
         game.put(0).unwrap();
 
         assert_eq!(game.status(), &Status::Win(Player::Player0));
+    }
+
+    #[test]
+    fn detects_diagonal_win_near_board_edge() {
+        let mut game = Game::new().unwrap();
+
+        for col in [
+            6, 6, 6, 6, 6, 6, 5, 5, 5, 4, 5, 5, 5, 4, 3, 4, 4, 0, 4, 4, 3, 3, 3, 3, 3,
+        ] {
+            game.put(col).unwrap();
+        }
+
+        assert_eq!(game.get(0, 3), Some(Player::Player0));
+        assert_eq!(game.get(1, 4), Some(Player::Player0));
+        assert_eq!(game.get(2, 5), Some(Player::Player0));
+        assert_eq!(game.get(3, 6), Some(Player::Player0));
+        assert_eq!(game.status(), &Status::Win(Player::Player0));
+    }
+
+    #[test]
+    fn debug_board_uses_actual_row_positions() {
+        let mut game = Game::new().unwrap();
+
+        game.put(3).unwrap();
+        game.put(2).unwrap();
+
+        extern crate alloc;
+        let mut debug = alloc::string::String::new();
+        write!(debug, "{game:?}").unwrap();
+
+        assert!(debug.contains("[None, None, None, None, None, Some(Player1)]"));
+        assert!(debug.contains("[None, None, None, None, None, Some(Player0)]"));
+        assert!(!debug.contains("[Some(Player0), None, None, None, None, None]"));
     }
 }
