@@ -71,7 +71,7 @@ pub struct Cell {
 }
 
 /// The visibility and interaction status of a cell
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum CellStatus {
     /// The cell has not been revealed or flagged yet
@@ -136,7 +136,7 @@ impl Game {
         rng: &mut R,
         width: usize,
         height: usize,
-        mut mine_count: usize,
+        mine_count: usize,
     ) -> Result<Self, Error>
     where
         R: Rng,
@@ -146,12 +146,13 @@ impl Game {
         }
 
         let mut board = alloc::vec::Vec::with_capacity(width * height);
+        let mut remaining_mine_count = mine_count;
 
         for idx in 0..width * height {
-            let is_mine = rng.random_range(0..width * height - idx) < mine_count;
+            let is_mine = rng.random_range(0..width * height - idx) < remaining_mine_count;
 
             if is_mine {
-                mine_count -= 1;
+                remaining_mine_count -= 1;
             }
 
             board.push(Cell {
@@ -251,13 +252,21 @@ impl Game {
                 }
 
                 if adjacent_flagged_count == adjacent_mine_count {
+                    if adjacent_hidden_cell_coords.is_empty() {
+                        return Err(Error::InvalidClick);
+                    }
                     self.reveal(adjacent_hidden_cell_coords);
                 } else if auto_flag
                     && adjacent_hidden_cell_coords.len() + adjacent_flagged_count
                         == adjacent_mine_count
                 {
+                    if self.flag_count + adjacent_hidden_cell_coords.len() > self.mine_count {
+                        return Err(Error::TooManyFlags);
+                    }
+
                     for (row, col) in adjacent_hidden_cell_coords {
                         self.board[row * self.width + col].status = CellStatus::Flagged;
+                        self.flag_count += 1;
                     }
                 } else {
                     return Err(Error::InvalidClick);
@@ -349,19 +358,23 @@ impl Game {
     /// - Otherwise, it reveals the cell showing the adjacent mine count
     fn reveal(&mut self, coords: impl Into<VecDeque<(usize, usize)>>) {
         let mut coords = coords.into();
-        let mut is_exploded = false;
 
         while let Some((row, col)) = coords.pop_front() {
-            if self.board[row * self.width + col].is_mine {
-                self.board[row * self.width + col].status = CellStatus::Exploded;
-                self.status = Status::Exploded;
-                is_exploded = true;
+            let cell_idx = row * self.width + col;
+
+            if !matches!(self.board[cell_idx].status, CellStatus::Hidden) {
                 continue;
             }
 
-            self.board[row * self.width + col].status = CellStatus::Revealed;
+            if self.board[cell_idx].is_mine {
+                self.board[cell_idx].status = CellStatus::Exploded;
+                self.status = Status::Exploded;
+                break;
+            }
 
-            if !is_exploded && self.board[row * self.width + col].adjacent_mine_count == 0 {
+            self.board[cell_idx].status = CellStatus::Revealed;
+
+            if self.board[cell_idx].adjacent_mine_count == 0 {
                 coords.extend(AdjacentCellCoords::new(self.width, self.height, row, col));
             }
         }
@@ -373,6 +386,10 @@ impl Game {
     /// - All non-mine cells have been revealed, OR
     /// - All mine cells have been flagged
     fn update_status(&mut self) {
+        if matches!(self.status, Status::Exploded) {
+            return;
+        }
+
         let all_revealed = self
             .board
             .iter()
@@ -443,5 +460,160 @@ impl Iterator for AdjacentCellCoords {
                 return Some((row, col));
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn cell(is_mine: bool, adjacent_mine_count: usize, status: CellStatus) -> Cell {
+        Cell {
+            is_mine,
+            adjacent_mine_count,
+            status,
+        }
+    }
+
+    #[test]
+    fn new_preserves_mine_count_and_allows_flags() {
+        let mut game = Game::new(&mut rand::rng(), 2, 2, 1).unwrap();
+
+        assert_eq!(game.mine_count(), 1);
+        game.flag(0, 0).unwrap();
+        assert_eq!(game.flag_count(), 1);
+    }
+
+    #[test]
+    fn reveal_empty_region_finishes_without_reprocessing_revealed_cells() {
+        let mut game = Game {
+            board: alloc::vec![
+                cell(false, 0, CellStatus::Hidden),
+                cell(false, 0, CellStatus::Hidden),
+                cell(false, 0, CellStatus::Hidden),
+                cell(false, 0, CellStatus::Hidden),
+            ],
+            width: 2,
+            height: 2,
+            mine_count: 0,
+            flag_count: 0,
+            status: Status::Ongoing,
+        };
+
+        game.click(0, 0, false).unwrap();
+
+        assert!(
+            game.board
+                .iter()
+                .all(|cell| matches!(cell.status, CellStatus::Revealed))
+        );
+        assert_eq!(game.status(), &Status::Finished);
+    }
+
+    #[test]
+    fn reveal_skips_flagged_cells_and_keeps_flag_count() {
+        let mut game = Game {
+            board: alloc::vec![
+                cell(false, 0, CellStatus::Hidden),
+                cell(false, 1, CellStatus::Flagged),
+                cell(true, 0, CellStatus::Hidden),
+            ],
+            width: 3,
+            height: 1,
+            mine_count: 1,
+            flag_count: 1,
+            status: Status::Ongoing,
+        };
+
+        game.click(0, 0, false).unwrap();
+
+        assert_eq!(game.get(0, 1).status(), &CellStatus::Flagged);
+        assert_eq!(game.flag_count(), 1);
+        assert_eq!(game.status(), &Status::Ongoing);
+    }
+
+    #[test]
+    fn auto_flag_updates_flag_count() {
+        let mut game = Game {
+            board: alloc::vec![
+                cell(false, 1, CellStatus::Revealed),
+                cell(true, 0, CellStatus::Hidden),
+                cell(false, 2, CellStatus::Hidden),
+                cell(true, 0, CellStatus::Hidden),
+            ],
+            width: 4,
+            height: 1,
+            mine_count: 2,
+            flag_count: 0,
+            status: Status::Ongoing,
+        };
+
+        game.click(0, 0, true).unwrap();
+
+        assert_eq!(game.get(0, 1).status(), &CellStatus::Flagged);
+        assert_eq!(game.flag_count(), 1);
+
+        game.flag(0, 1).unwrap();
+        assert_eq!(game.get(0, 1).status(), &CellStatus::Hidden);
+        assert_eq!(game.flag_count(), 0);
+    }
+
+    #[test]
+    fn auto_flag_respects_global_flag_limit() {
+        let mut game = Game {
+            board: alloc::vec![
+                cell(false, 1, CellStatus::Revealed),
+                cell(true, 0, CellStatus::Hidden),
+                cell(false, 1, CellStatus::Hidden),
+                cell(true, 0, CellStatus::Flagged),
+            ],
+            width: 4,
+            height: 1,
+            mine_count: 1,
+            flag_count: 1,
+            status: Status::Ongoing,
+        };
+
+        assert!(matches!(game.click(0, 0, true), Err(Error::TooManyFlags)));
+        assert_eq!(game.flag_count(), 1);
+        assert_eq!(game.get(0, 1).status(), &CellStatus::Hidden);
+    }
+
+    #[test]
+    fn revealed_click_with_no_hidden_neighbors_is_invalid() {
+        let mut game = Game {
+            board: alloc::vec![
+                cell(false, 0, CellStatus::Revealed),
+                cell(false, 0, CellStatus::Revealed),
+                cell(false, 0, CellStatus::Hidden),
+            ],
+            width: 3,
+            height: 1,
+            mine_count: 0,
+            flag_count: 0,
+            status: Status::Ongoing,
+        };
+
+        assert!(matches!(game.click(0, 0, false), Err(Error::InvalidClick)));
+    }
+
+    #[test]
+    fn explosion_status_is_not_overwritten() {
+        let mut game = Game {
+            board: alloc::vec![
+                cell(false, 1, CellStatus::Revealed),
+                cell(true, 0, CellStatus::Hidden),
+            ],
+            width: 2,
+            height: 1,
+            mine_count: 1,
+            flag_count: 0,
+            status: Status::Ongoing,
+        };
+
+        game.click(0, 1, false).unwrap();
+
+        assert_eq!(game.get(0, 1).status(), &CellStatus::Exploded);
+        assert_eq!(game.status(), &Status::Exploded);
     }
 }

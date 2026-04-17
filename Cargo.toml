@@ -20,13 +20,12 @@ alloc = []
 serde = ["dep:serde"]
 connect_four = []
 gomoku = []
-minesweeper = ["dep:rand", "serde?/alloc"]
+minesweeper = ["alloc", "dep:rand", "serde?/alloc"]
 reversi = []
 tictactoe = []
 
 [dev-dependencies.gamie]
 path = "."
-default-features = false
 features = ["std", "serde", "connect_four", "gomoku", "minesweeper", "reversi", "tictactoe"]
 
 [dependencies.rand]
