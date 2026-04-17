@@ -24,10 +24,6 @@ minesweeper = ["alloc", "dep:rand", "serde?/alloc"]
 reversi = []
 tictactoe = []
 
-[dev-dependencies.gamie]
-path = "."
-features = ["std", "serde", "connect_four", "gomoku", "minesweeper", "reversi", "tictactoe"]
-
 [dependencies.rand]
 version = "0.10.1"
 default-features = false

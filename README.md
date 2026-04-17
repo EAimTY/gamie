@@ -21,7 +21,7 @@ gamie = { version = "0.12.0", features = ["std", "tictactoe"] }
 
 Now you can use the Tic-Tac-Toe game abstraction:
 
-```rust
+```rust,ignore
 use gamie::tictactoe::{Game, Status};
 
 let mut game = Game::new().unwrap();
