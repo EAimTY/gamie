@@ -179,34 +179,41 @@ impl Game {
         // all 3 positions in each direction (horizontal, vertical, and diagonal)
 
         // Check horizontal
-        if self.get(last_move.row, 0) == self.get(last_move.row, 1)
-            && self.get(last_move.row, 1) == self.get(last_move.row, 2)
+        if self.get(last_move.row, 0) == Some(last_move.player)
+            && self.get(last_move.row, 1) == Some(last_move.player)
+            && self.get(last_move.row, 2) == Some(last_move.player)
         {
             self.status = Status::Win(last_move.player);
             return;
         }
 
         // Check vertical
-        if self.get(0, last_move.col) == self.get(1, last_move.col)
-            && self.get(1, last_move.col) == self.get(2, last_move.col)
+        if self.get(0, last_move.col) == Some(last_move.player)
+            && self.get(1, last_move.col) == Some(last_move.player)
+            && self.get(2, last_move.col) == Some(last_move.player)
         {
             self.status = Status::Win(last_move.player);
             return;
         }
 
-        // Check diagonals only if the last move is on a diagonal
-        if !((last_move.row == 1) ^ (last_move.col == 1)) {
-            // Top-left to bottom-right diagonal
-            if self.get(0, 0) == self.get(1, 1) && self.get(1, 1) == self.get(2, 2) {
-                self.status = Status::Win(last_move.player);
-                return;
-            }
+        // Check top-left to bottom-right diagonal
+        if last_move.row == last_move.col
+            && self.get(0, 0) == Some(last_move.player)
+            && self.get(1, 1) == Some(last_move.player)
+            && self.get(2, 2) == Some(last_move.player)
+        {
+            self.status = Status::Win(last_move.player);
+            return;
+        }
 
-            // Top-right to bottom-left diagonal
-            if self.get(0, 2) == self.get(1, 1) && self.get(1, 1) == self.get(2, 0) {
-                self.status = Status::Win(last_move.player);
-                return;
-            }
+        // Check top-right to bottom-left diagonal
+        if last_move.row + last_move.col == BOARD_WIDTH - 1
+            && self.get(0, 2) == Some(last_move.player)
+            && self.get(1, 1) == Some(last_move.player)
+            && self.get(2, 0) == Some(last_move.player)
+        {
+            self.status = Status::Win(last_move.player);
+            return;
         }
 
         // Check for draw
@@ -251,5 +258,17 @@ mod tests {
 
         assert_eq!(game.status(), &Status::Win(Player::Player0));
         assert!(matches!(game.put(0, 2), Err(Error::GameEnded)));
+    }
+
+    #[test]
+    fn corner_opening_moves_do_not_win() {
+        for (row, col) in [(0, 0), (0, 2), (2, 0), (2, 2)] {
+            let mut game = Game::new().unwrap();
+
+            game.put(row, col).unwrap();
+
+            assert_eq!(game.status(), &Status::Ongoing);
+            assert_eq!(game.next_player(), Player::Player1);
+        }
     }
 }
