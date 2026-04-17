@@ -16,7 +16,7 @@ To use gamie, enable the desired feature flags in `Cargo.toml`. For example, to 
 
 ```toml
 [dependencies]
-gamie = { version = "0.12.0", features = ["std", "tictactoe"] }
+gamie = { version = "0.13.0", features = ["std", "tictactoe"] }
 ```
 
 Now you can use the Tic-Tac-Toe game abstraction:
@@ -60,9 +60,14 @@ To remove the Rust standard library dependency, disable the `std` feature by set
 
 ```toml
 [dependencies]
-gamie = { version = "0.12.0", default-features = false, features = ["tictactoe"] }
+gamie = { version = "0.13.0", default-features = false, features = ["tictactoe"] }
 ```
 
 ## License
 
-GNU General Public License v3.0
+Licensed under either of:
+
+- Apache License, Version 2.0, in [LICENSE-APACHE](LICENSE-APACHE)
+- MIT license, in [LICENSE-MIT](LICENSE-MIT)
+
+at your option.
